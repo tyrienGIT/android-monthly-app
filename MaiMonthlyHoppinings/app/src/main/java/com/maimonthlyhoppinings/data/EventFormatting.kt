@@ -43,8 +43,8 @@ fun TrackedEvent.shortDateRangeLabel(): String {
     }
 }
 
-fun TrackedEvent.displayTitle(): String {
-    return title.trim().ifEmpty { eventType }
+fun TrackedEvent.displayTitle(types: EventTypeLookup = EventTypeLookup(emptyList())): String {
+    return title.trim().ifEmpty { types.label(eventTypeId) }
 }
 
 /** Entry title if set; otherwise falls back to the parent event title. */

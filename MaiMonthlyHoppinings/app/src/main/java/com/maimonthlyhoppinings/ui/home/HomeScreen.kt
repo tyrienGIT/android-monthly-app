@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.data.EventWithEntries
 import com.maimonthlyhoppinings.data.displayTitle
 import com.maimonthlyhoppinings.data.entryCountLabel
@@ -64,7 +65,7 @@ fun HomeScreen(
 
     pendingDelete?.let { event ->
         ConfirmDeleteDialog(
-            eventTitle = event.event.displayTitle(),
+            eventTitle = event.event.displayTitle(state.types),
             onConfirm = {
                 viewModel.deleteEvent(event.event.id)
                 pendingDelete = null
@@ -145,6 +146,7 @@ fun HomeScreen(
                 items(state.events, key = { it.event.id }) { event ->
                     HomeEventRow(
                         event = event,
+                        types = state.types,
                         onClick = { onOpenEvent(event.event.id) },
                         onDelete = { pendingDelete = event },
                     )
@@ -157,10 +159,11 @@ fun HomeScreen(
 @Composable
 private fun HomeEventRow(
     event: EventWithEntries,
+    types: EventTypeLookup,
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val typeColor = colorForEventType(event.event.eventType)
+    val typeColor = colorForEventType(event.event.eventTypeId, types)
     val latest = event.latestEntry()
 
     Card(
@@ -191,12 +194,12 @@ private fun HomeEventRow(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = event.event.displayTitle(),
+                        text = event.event.displayTitle(types),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = event.event.eventType,
+                        text = types.label(event.event.eventTypeId),
                         style = MaterialTheme.typography.bodyMedium,
                         color = typeColor,
                         modifier = Modifier.padding(top = 2.dp),

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.maimonthlyhoppinings.data.EntryInput
 import com.maimonthlyhoppinings.data.EventRepository
+import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.data.TrackedEvent
 import com.maimonthlyhoppinings.data.displayTitle
 import kotlinx.coroutines.channels.Channel
@@ -32,6 +33,7 @@ data class EntryDraft(
 
 data class EntryEditorUiState(
     val event: TrackedEvent? = null,
+    val types: EventTypeLookup = EventTypeLookup(emptyList()),
     val draft: EntryDraft,
     val dateLabel: String,
     val startTimeLabel: String,
@@ -61,9 +63,11 @@ class EntryEditorViewModel(
         parentEvent,
         draft,
         errorMessage,
-    ) { event, currentDraft, error ->
+        eventRepository.observeTypeLookup(),
+    ) { event, currentDraft, error, types ->
         EntryEditorUiState(
             event = event,
+            types = types,
             draft = currentDraft,
             dateLabel = currentDraft.date.format(dateFormatter),
             startTimeLabel = currentDraft.startTime?.format(timeFormatter) ?: "No time",
@@ -119,7 +123,7 @@ class EntryEditorViewModel(
     }
 
     fun eventTitle(): String {
-        return parentEvent.value?.displayTitle() ?: "Entry"
+        return parentEvent.value?.displayTitle(uiState.value.types) ?: "Entry"
     }
 
     fun confirmLabel(): String {

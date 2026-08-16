@@ -76,6 +76,12 @@ interface EventEntryDao {
     @Query("SELECT * FROM event_entries WHERE id = :id LIMIT 1")
     suspend fun getWithEvent(id: Long): EntryWithEvent?
 
+    @Query("SELECT * FROM event_entries WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): EventEntry?
+
+    @Query("SELECT * FROM event_entries")
+    suspend fun getAll(): List<EventEntry>
+
     @Insert
     suspend fun insert(entry: EventEntry): Long
 
@@ -84,4 +90,10 @@ interface EventEntryDao {
 
     @Query("DELETE FROM event_entries WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM event_entries WHERE id NOT IN (:keepIds)")
+    suspend fun deleteNotIn(keepIds: List<Long>)
+
+    @Query("DELETE FROM event_entries")
+    suspend fun deleteAll()
 }

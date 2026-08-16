@@ -5,8 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.lerp
-import com.maimonthlyhoppinings.data.EventType
 import com.maimonthlyhoppinings.data.EventTypeColor
+import com.maimonthlyhoppinings.data.EventTypeLookup
 
 fun EventTypeColor.toComposeColor(darkTheme: Boolean = false): Color {
     val base = when (this) {
@@ -20,8 +20,12 @@ fun EventTypeColor.toComposeColor(darkTheme: Boolean = false): Color {
     return if (darkTheme) lerp(base, Color.White, 0.28f) else base
 }
 
-fun colorForEventType(label: String, darkTheme: Boolean = false): Color {
-    return EventType.colorFor(label).toComposeColor(darkTheme)
+fun colorForEventType(
+    typeId: String,
+    types: EventTypeLookup,
+    darkTheme: Boolean = false,
+): Color {
+    return types.color(typeId).toComposeColor(darkTheme)
 }
 
 @Composable
@@ -30,8 +34,8 @@ private fun isAppDarkTheme(): Boolean {
 }
 
 @Composable
-fun colorForEventType(label: String): Color {
-    return colorForEventType(label, darkTheme = isAppDarkTheme())
+fun colorForEventType(typeId: String, types: EventTypeLookup): Color {
+    return colorForEventType(typeId, types, darkTheme = isAppDarkTheme())
 }
 
 @Composable

@@ -2,12 +2,13 @@ package com.maimonthlyhoppinings.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.LocalTime
 
 data class EventInput(
     val title: String,
-    val eventType: String = EventType.default,
+    val eventTypeId: String = EventType.defaultId,
     val details: String = "",
     val startDate: LocalDate,
     val endDate: LocalDate,
@@ -25,7 +26,16 @@ data class EntryInput(
 class EventRepository(
     private val trackedEventDao: TrackedEventDao,
     private val eventEntryDao: EventEntryDao,
+    private val eventTypeDao: EventTypeDao,
 ) {
+    fun observeTypes(): Flow<List<EventTypeEntity>> = eventTypeDao.observeAll()
+
+    suspend fun getTypes(): List<EventTypeEntity> = eventTypeDao.getAll()
+
+    fun observeTypeLookup(): Flow<EventTypeLookup> {
+        return eventTypeDao.observeAll().map { EventTypeLookup(it) }
+    }
+
     fun observeEventsWithEntries(): Flow<List<EventWithEntries>> {
         return trackedEventDao.observeAllWithEntries()
     }
@@ -69,7 +79,9 @@ class EventRepository(
         return combine(
             trackedEventDao.observeOverlappingRange(start, end),
             eventEntryDao.observeEntriesForEventsOverlappingRange(start, end),
-        ) { events, entryItems ->
+            eventTypeDao.observeAll(),
+        ) { events, entryItems, types ->
+            val typeLookup = EventTypeLookup(types)
             val entriesByEvent = entryItems.groupBy { it.entry.eventId }
             val segmentsByDay = linkedMapOf<Long, MutableList<DayHeatSegment>>()
 
@@ -85,7 +97,7 @@ class EventRepository(
                 val intensityStops = orderedEntries
                     .map { it.intensity.coerceIn(1, 10) }
                     .ifEmpty { listOf(EVENT_SPAN_PRESENCE_INTENSITY) }
-                val color = EventType.colorFor(event.eventType)
+                val color = typeLookup.color(event.eventTypeId)
                 val spanLength = (event.endDateEpochDay - event.startDateEpochDay)
                     .coerceAtLeast(0L)
 
@@ -126,8 +138,8 @@ class EventRepository(
         // CASCADE would wipe all child entries.
         trackedEventDao.update(
             existing.copy(
-                title = input.title.trim().ifEmpty { input.eventType },
-                eventType = input.eventType,
+                title = input.title.trim().ifEmpty { typeLabel(input.eventTypeId) },
+                eventTypeId = input.eventTypeId,
                 details = input.details.trim(),
                 startDateEpochDay = covered.first,
                 endDateEpochDay = covered.second,
@@ -207,8 +219,10 @@ class EventRepository(
         )
     }
 
-    private fun validateEvent(input: EventInput) {
-        require(EventType.isValid(input.eventType)) { "Invalid event type" }
+    private suspend fun validateEvent(input: EventInput) {
+        require(EventType.isValidId(input.eventTypeId, eventTypeDao.getAll())) {
+            "Invalid event type"
+        }
         require(!input.endDate.isBefore(input.startDate)) { "End date must be on or after start date" }
     }
 
@@ -216,12 +230,16 @@ class EventRepository(
         require(input.intensity in 1..10) { "Intensity must be between 1 and 10" }
     }
 
-    private fun EventInput.toEntity(id: Long = 0): TrackedEvent {
-        val resolvedTitle = title.trim().ifEmpty { eventType }
+    private suspend fun typeLabel(typeId: String): String {
+        return eventTypeDao.getById(typeId)?.label ?: EventType.seedLabel(typeId)
+    }
+
+    private suspend fun EventInput.toEntity(id: Long = 0): TrackedEvent {
+        val resolvedTitle = title.trim().ifEmpty { typeLabel(eventTypeId) }
         return TrackedEvent(
             id = id,
             title = resolvedTitle,
-            eventType = eventType,
+            eventTypeId = eventTypeId,
             details = details.trim(),
             startDateEpochDay = startDate.toEpochDay(),
             endDateEpochDay = endDate.toEpochDay(),

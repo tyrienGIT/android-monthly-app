@@ -53,7 +53,7 @@ fun EntryEditorScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showSaveConfirm by remember { mutableStateOf(false) }
 
-    val typeColor = colorForEventType(state.event?.eventType.orEmpty())
+    val typeColor = colorForEventType(state.event?.eventTypeId.orEmpty(), state.types)
     val onTypeColor = if (typeColor.luminance() > 0.55f) Color.Black else Color.White
     val fieldColors = eventTypeFieldColors(typeColor)
 
@@ -130,7 +130,9 @@ fun EntryEditorScreen(
         ) {
             item {
                 Text(
-                    text = state.event?.let { "${it.eventType} · ${viewModel.eventTitle()}" }
+                    text = state.event?.let {
+                        "${state.types.label(it.eventTypeId)} · ${viewModel.eventTitle()}"
+                    }
                         ?: "Entry",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,

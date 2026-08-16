@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maimonthlyhoppinings.data.DayHeatSegment
 import com.maimonthlyhoppinings.data.EventEntry
+import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.data.displayTitle
 import com.maimonthlyhoppinings.data.intensityAtProgress
 import com.maimonthlyhoppinings.data.startTimeLabel
@@ -92,6 +93,7 @@ fun CalendarScreen(
         PickEventForEntryDialog(
             date = state.selectedDate,
             events = state.allEvents,
+            types = state.types,
             onStartNewEvent = {
                 showPickEvent = false
                 onStartEvent(state.selectedDate)
@@ -193,6 +195,7 @@ fun CalendarScreen(
             SelectedDayEventsPane(
                 dateLabel = state.selectedDateLabel,
                 groups = state.selectedDayGroups,
+                types = state.types,
                 onAdd = { requestAdd() },
                 onOpenEvent = onOpenEvent,
                 onEditEntry = onEditEntry,
@@ -210,6 +213,7 @@ private const val VisibleSubEntries = 3
 private fun SelectedDayEventsPane(
     dateLabel: String,
     groups: List<DayEventGroup>,
+    types: EventTypeLookup,
     onAdd: () -> Unit,
     onOpenEvent: (Long) -> Unit,
     onEditEntry: (Long) -> Unit,
@@ -270,6 +274,7 @@ private fun SelectedDayEventsPane(
                 items(groups, key = { it.event.id }) { group ->
                     SelectedDayEventGroup(
                         group = group,
+                        types = types,
                         onOpenEvent = { onOpenEvent(group.event.id) },
                         onEditEntry = onEditEntry,
                     )
@@ -282,10 +287,11 @@ private fun SelectedDayEventsPane(
 @Composable
 private fun SelectedDayEventGroup(
     group: DayEventGroup,
+    types: EventTypeLookup,
     onOpenEvent: () -> Unit,
     onEditEntry: (Long) -> Unit,
 ) {
-    val typeColor = colorForEventType(group.event.eventType)
+    val typeColor = colorForEventType(group.event.eventTypeId, types)
     var expanded by remember(group.event.id) { mutableStateOf(false) }
     val hiddenCount = (group.entries.size - VisibleSubEntries).coerceAtLeast(0)
     val visibleEntries = when {
@@ -317,14 +323,14 @@ private fun SelectedDayEventGroup(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = group.event.displayTitle(),
+                    text = group.event.displayTitle(types),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = group.event.eventType,
+                    text = types.label(group.event.eventTypeId),
                     style = MaterialTheme.typography.bodySmall,
                     color = typeColor,
                     maxLines = 1,
@@ -347,7 +353,7 @@ private fun SelectedDayEventGroup(
             ) {
                 visibleEntries.forEach { entry ->
                     SelectedDaySubEntryRow(
-                        entryTitle = entry.displayTitle(group.event),
+                        entryTitle = entry.title.trim().ifEmpty { group.event.displayTitle(types) },
                         entry = entry,
                         typeColor = typeColor,
                         onClick = { onEditEntry(entry.id) },

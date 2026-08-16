@@ -24,6 +24,7 @@ import com.maimonthlyhoppinings.ui.home.HomeScreen
 import com.maimonthlyhoppinings.ui.home.HomeViewModel
 import com.maimonthlyhoppinings.ui.settings.AppearanceScreen
 import com.maimonthlyhoppinings.ui.settings.ColorThemeSettingsScreen
+import com.maimonthlyhoppinings.ui.settings.DataBackupViewModel
 import com.maimonthlyhoppinings.ui.settings.LightDarkSettingsScreen
 import com.maimonthlyhoppinings.ui.settings.SettingsHomeScreen
 import com.maimonthlyhoppinings.ui.settings.SettingsRoutes
@@ -90,7 +91,11 @@ fun AppNav(
             startDestination = SettingsRoutes.Root,
         ) {
             composable(SettingsRoutes.Root) {
+                val backupViewModel: DataBackupViewModel = viewModel(
+                    factory = DataBackupViewModel.factory(app.backupRepository),
+                )
                 SettingsHomeScreen(
+                    viewModel = backupViewModel,
                     onOpenAppearance = { navController.navigate(SettingsRoutes.Appearance) },
                     onBack = { navController.popBackStack() },
                 )

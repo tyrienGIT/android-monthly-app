@@ -1,0 +1,24 @@
+---
+description: Rebuild and relaunch the emulator app after MaiMonthlyHoppinings code changes
+alwaysApply: true
+---
+
+# Relaunch after app changes
+
+After you change anything that affects the running Android app (Kotlin, resources, Gradle, manifest, Room schema), **install and relaunch** before you stop. Do not wait to be asked.
+
+The project is `MaiMonthlyHoppinings/`. If `adb devices` shows no emulator, follow `.cursor/rules/launch-emulator.mdc` first. If a device is already booted, only reinstall and start:
+
+```powershell
+$sdk = "$env:LOCALAPPDATA\Android\Sdk"
+$env:ANDROID_HOME = $sdk
+$env:ANDROID_SDK_ROOT = $sdk
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:Path = "$sdk\platform-tools;$env:JAVA_HOME\bin;$env:Path"
+
+cd MaiMonthlyHoppinings
+.\gradlew.bat :app:installDebug
+adb shell am start -n com.maimonthlyhoppinings/.MainActivity
+```
+
+Skip relaunch for docs-only, Cursor rules, or git-only work. If install fails, fix the build; do not leave a stale APK on the emulator.

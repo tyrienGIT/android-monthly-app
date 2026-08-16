@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.maimonthlyhoppinings.data.EventInput
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.EventType
+import com.maimonthlyhoppinings.data.EventTypeLookup
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,7 +22,7 @@ import java.util.Locale
 
 data class EventMetaDraft(
     val title: String = "",
-    val eventType: String = EventType.default,
+    val eventTypeId: String = EventType.defaultId,
     val details: String = "",
     val startDate: LocalDate = LocalDate.now(),
     val endDate: LocalDate = LocalDate.now(),
@@ -29,6 +30,7 @@ data class EventMetaDraft(
 
 data class StartEventUiState(
     val draft: EventMetaDraft = EventMetaDraft(),
+    val types: EventTypeLookup = EventTypeLookup(emptyList()),
     val startDateLabel: String = "",
     val endDateLabel: String = "",
     val isEditing: Boolean = false,
@@ -49,9 +51,14 @@ class StartEventViewModel(
 
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
 
-    val uiState: StateFlow<StartEventUiState> = combine(draft, errorMessage) { current, error ->
+    val uiState: StateFlow<StartEventUiState> = combine(
+        draft,
+        errorMessage,
+        eventRepository.observeTypeLookup(),
+    ) { current, error, types ->
         StartEventUiState(
             draft = current,
+            types = types,
             startDateLabel = current.startDate.format(dateFormatter),
             endDateLabel = current.endDate.format(dateFormatter),
             isEditing = editingEventId != null,
@@ -75,7 +82,7 @@ class StartEventViewModel(
                 if (existing != null) {
                     draft.value = EventMetaDraft(
                         title = existing.title,
-                        eventType = existing.eventType,
+                        eventTypeId = existing.eventTypeId,
                         details = existing.details,
                         startDate = LocalDate.ofEpochDay(existing.startDateEpochDay),
                         endDate = LocalDate.ofEpochDay(existing.endDateEpochDay),
@@ -88,7 +95,7 @@ class StartEventViewModel(
     }
 
     fun resolvedTitle(draft: EventMetaDraft = this.draft.value): String {
-        return draft.title.trim().ifEmpty { draft.eventType }
+        return draft.title.trim().ifEmpty { uiState.value.types.label(draft.eventTypeId) }
     }
 
     fun onTitleChange(value: String) {
@@ -97,7 +104,7 @@ class StartEventViewModel(
     }
 
     fun onEventTypeChange(value: String) {
-        draft.update { it.copy(eventType = value) }
+        draft.update { it.copy(eventTypeId = value) }
     }
 
     fun onDetailsChange(value: String) {
@@ -120,7 +127,7 @@ class StartEventViewModel(
             }
             val input = EventInput(
                 title = resolvedTitle(current),
-                eventType = current.eventType,
+                eventTypeId = current.eventTypeId,
                 details = current.details,
                 startDate = current.startDate,
                 endDate = current.endDate,

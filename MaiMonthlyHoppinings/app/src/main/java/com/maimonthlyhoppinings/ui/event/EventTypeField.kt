@@ -27,7 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.maimonthlyhoppinings.data.EventType
+import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
 
 @Composable
@@ -46,7 +46,8 @@ fun eventTypeFieldColors(typeColor: Color) = OutlinedTextFieldDefaults.colors(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventTypeDropdown(
-    selectedType: String,
+    selectedTypeId: String,
+    types: EventTypeLookup,
     typeColor: Color,
     onTypeSelected: (String) -> Unit,
 ) {
@@ -57,7 +58,7 @@ fun EventTypeDropdown(
         onExpandedChange = { expanded = it },
     ) {
         OutlinedTextField(
-            value = selectedType,
+            value = types.label(selectedTypeId),
             onValueChange = {},
             readOnly = true,
             modifier = Modifier
@@ -88,8 +89,8 @@ fun EventTypeDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            EventType.definitions.forEach { definition ->
-                val optionColor = colorForEventType(definition.label)
+            types.all.forEach { definition ->
+                val optionColor = colorForEventType(definition.id, types)
                 DropdownMenuItem(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -97,7 +98,7 @@ fun EventTypeDropdown(
                             Text(
                                 text = definition.label,
                                 color = optionColor,
-                                fontWeight = if (definition.label == selectedType) {
+                                fontWeight = if (definition.id == selectedTypeId) {
                                     FontWeight.SemiBold
                                 } else {
                                     FontWeight.Normal
@@ -107,7 +108,7 @@ fun EventTypeDropdown(
                         }
                     },
                     onClick = {
-                        onTypeSelected(definition.label)
+                        onTypeSelected(definition.id)
                         expanded = false
                     },
                 )

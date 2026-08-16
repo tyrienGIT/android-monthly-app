@@ -1,0 +1,34 @@
+---
+description: How to launch Mai Monthly Hoppinings on the Android emulator
+alwaysApply: true
+---
+
+# Launch the app
+
+The Android project is `MaiMonthlyHoppinings/` (not the repo root). Package / application ID is `com.maimonthlyhoppinings`. There is no in-Cursor preview.
+
+SDK on this machine: `%LOCALAPPDATA%\Android\Sdk`. AVD: `Virtual_Device_-_API_35_Android_15`. Use Android Studio’s JBR as `JAVA_HOME` so Gradle is not run with a random system JDK.
+
+```powershell
+$sdk = "$env:LOCALAPPDATA\Android\Sdk"
+$env:ANDROID_HOME = $sdk
+$env:ANDROID_SDK_ROOT = $sdk
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:Path = "$sdk\platform-tools;$sdk\emulator;$env:JAVA_HOME\bin;$env:Path"
+
+# Start the emulator if adb devices is empty
+emulator -avd Virtual_Device_-_API_35_Android_15
+adb wait-for-device
+# Wait until this prints 1
+adb shell getprop sys.boot_completed
+
+cd MaiMonthlyHoppinings
+.\gradlew.bat :app:installDebug
+adb shell am start -n com.maimonthlyhoppinings/.MainActivity
+```
+
+Do not run Gradle from the repo root. After a rename or `applicationId` change, uninstall the old package first; Android will not overwrite a different ID.
+
+```powershell
+adb uninstall com.howamidoing   # only if an old install is still present
+```

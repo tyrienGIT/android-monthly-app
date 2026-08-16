@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.maimonthlyhoppinings.data.EventEntry
 import com.maimonthlyhoppinings.data.EventRepository
+import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.data.TrackedEvent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ data class CalendarUiState(
     val selectedDateLabel: String,
     val selectedDayGroups: List<DayEventGroup> = emptyList(),
     val allEvents: List<TrackedEvent> = emptyList(),
+    val types: EventTypeLookup = EventTypeLookup(emptyList()),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -62,7 +64,8 @@ class CalendarViewModel(
         combine(
             eventRepository.observeEventsForDay(date),
             eventRepository.observeEntriesForDay(date),
-        ) { dayEvents, dayEntries ->
+            eventRepository.observeTypeLookup(),
+        ) { dayEvents, dayEntries, types ->
             val entriesByEvent = dayEntries
                 .groupBy { it.entry.eventId }
                 .mapValues { (_, items) ->
@@ -100,6 +103,7 @@ class CalendarViewModel(
                 selectedDateLabel = date.format(selectedDateFormatter),
                 selectedDayGroups = groups,
                 allEvents = allEvents,
+                types = types,
             )
         }
     }.stateIn(

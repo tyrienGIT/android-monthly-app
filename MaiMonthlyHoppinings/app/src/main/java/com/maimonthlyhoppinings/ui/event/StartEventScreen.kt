@@ -43,7 +43,7 @@ fun StartEventScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showSaveConfirm by remember { mutableStateOf(false) }
     var dateRangePickTarget by remember { mutableStateOf<DateRangePickTarget?>(null) }
-    val typeColor = colorForEventType(state.draft.eventType)
+    val typeColor = colorForEventType(state.draft.eventTypeId, state.types)
     val onTypeColor = if (typeColor.luminance() > 0.55f) Color.Black else Color.White
     val fieldColors = eventTypeFieldColors(typeColor)
 
@@ -120,13 +120,14 @@ fun StartEventScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     label = { Text("Title (optional)") },
-                    placeholder = { Text("Defaults to ${state.draft.eventType}") },
+                    placeholder = { Text("Defaults to ${state.types.label(state.draft.eventTypeId)}") },
                     colors = fieldColors,
                 )
             }
             item {
                 EventTypeDropdown(
-                    selectedType = state.draft.eventType,
+                    selectedTypeId = state.draft.eventTypeId,
+                    types = state.types,
                     typeColor = typeColor,
                     onTypeSelected = viewModel::onEventTypeChange,
                 )

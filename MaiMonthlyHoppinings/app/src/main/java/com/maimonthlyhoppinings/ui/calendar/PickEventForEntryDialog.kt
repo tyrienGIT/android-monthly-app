@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.data.TrackedEvent
 import com.maimonthlyhoppinings.data.displayTitle
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
@@ -33,6 +34,7 @@ import java.util.Locale
 fun PickEventForEntryDialog(
     date: LocalDate,
     events: List<TrackedEvent>,
+    types: EventTypeLookup,
     onStartNewEvent: () -> Unit,
     onPickEvent: (Long) -> Unit,
     onDismiss: () -> Unit,
@@ -54,6 +56,7 @@ fun PickEventForEntryDialog(
                     items(events, key = { it.id }) { event ->
                         PickEventRow(
                             event = event,
+                            types = types,
                             onClick = { onPickEvent(event.id) },
                         )
                         HorizontalDivider()
@@ -84,9 +87,10 @@ fun PickEventForEntryDialog(
 @Composable
 private fun PickEventRow(
     event: TrackedEvent,
+    types: EventTypeLookup,
     onClick: () -> Unit,
 ) {
-    val typeColor = colorForEventType(event.eventType)
+    val typeColor = colorForEventType(event.eventTypeId, types)
 
     Row(
         modifier = Modifier
@@ -104,12 +108,12 @@ private fun PickEventRow(
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = event.displayTitle(),
+                text = event.displayTitle(types),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
             )
             Text(
-                text = event.eventType,
+                text = types.label(event.eventTypeId),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),

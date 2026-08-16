@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maimonthlyhoppinings.data.EventEntry
+import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.data.TrackedEvent
 import com.maimonthlyhoppinings.data.dateLabel
 import com.maimonthlyhoppinings.data.dateRangeLabel
@@ -65,12 +66,14 @@ fun EventDetailScreen(
     var pendingDeleteEvent by remember { mutableStateOf(false) }
 
     val event = state.eventWithEntries?.event
-    val typeColor = colorForEventType(event?.eventType ?: "")
+    val types = state.types
+    val typeColor = colorForEventType(event?.eventTypeId.orEmpty(), types)
 
     pendingDeleteEntry?.let { entry ->
         val parent = state.eventWithEntries?.event
         ConfirmDeleteDialog(
-            eventTitle = parent?.let { entry.displayTitle(it) } ?: entry.dateLabel(),
+            eventTitle = parent?.let { entry.title.trim().ifEmpty { it.displayTitle(types) } }
+                ?: entry.dateLabel(),
             entityLabel = "entry",
             onConfirm = {
                 viewModel.deleteEntry(entry.id)
@@ -82,7 +85,7 @@ fun EventDetailScreen(
 
     if (pendingDeleteEvent && event != null) {
         ConfirmDeleteDialog(
-            eventTitle = event.displayTitle(),
+            eventTitle = event.displayTitle(types),
             entityLabel = "event",
             onConfirm = {
                 pendingDeleteEvent = false
@@ -95,7 +98,7 @@ fun EventDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(event?.displayTitle() ?: "Event") },
+                title = { Text(event?.displayTitle(types) ?: "Event") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -169,7 +172,7 @@ fun EventDetailScreen(
                 ) {
                     item {
                         Text(
-                            text = event.eventType,
+                            text = types.label(event.eventTypeId),
                             style = MaterialTheme.typography.titleMedium,
                             color = typeColor,
                             fontWeight = FontWeight.SemiBold,
@@ -224,6 +227,7 @@ fun EventDetailScreen(
                         EntryRow(
                             entry = entry,
                             parentEvent = event,
+                            types = types,
                             typeColor = typeColor,
                             onClick = { onOpenEntry(entry.id) },
                             onDelete = { pendingDeleteEntry = entry },
@@ -239,6 +243,7 @@ fun EventDetailScreen(
 private fun EntryRow(
     entry: EventEntry,
     parentEvent: TrackedEvent,
+    types: EventTypeLookup,
     typeColor: Color,
     onClick: () -> Unit,
     onDelete: () -> Unit,
@@ -275,7 +280,7 @@ private fun EntryRow(
                 Column(modifier = Modifier.weight(1f)) {
                     if (hasCustomTitle) {
                         Text(
-                            text = entry.displayTitle(parentEvent),
+                            text = entry.title.trim().ifEmpty { parentEvent.displayTitle(types) },
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )

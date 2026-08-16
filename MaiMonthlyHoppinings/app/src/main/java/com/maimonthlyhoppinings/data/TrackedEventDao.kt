@@ -58,6 +58,9 @@ interface TrackedEventDao {
     @Query("SELECT * FROM tracked_events WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): TrackedEvent?
 
+    @Query("SELECT * FROM tracked_events")
+    suspend fun getAll(): List<TrackedEvent>
+
     @Insert
     suspend fun insert(event: TrackedEvent): Long
 
@@ -66,4 +69,10 @@ interface TrackedEventDao {
 
     @Query("DELETE FROM tracked_events WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM tracked_events WHERE id NOT IN (:keepIds)")
+    suspend fun deleteNotIn(keepIds: List<Long>)
+
+    @Query("DELETE FROM tracked_events")
+    suspend fun deleteAll()
 }
