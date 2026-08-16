@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class CategorySettingsUiState(
     val categories: List<EventTypeEntity> = emptyList(),
@@ -26,6 +27,12 @@ class CategorySettingsViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = CategorySettingsUiState(),
         )
+
+    fun updateLabel(id: String, label: String) {
+        viewModelScope.launch {
+            eventRepository.updateType(id = id, label = label)
+        }
+    }
 
     companion object {
         fun typeSortKey(id: String): Int {

@@ -36,6 +36,21 @@ class EventRepository(
         return eventTypeDao.observeAll().map { EventTypeLookup(it) }
     }
 
+    suspend fun updateType(
+        id: String,
+        label: String? = null,
+        color: EventTypeColor? = null,
+    ) {
+        val existing = eventTypeDao.getById(id) ?: return
+        val nextLabel = label?.trim()?.ifEmpty { existing.label } ?: existing.label
+        eventTypeDao.update(
+            existing.copy(
+                label = nextLabel,
+                color = color?.name ?: existing.color,
+            ),
+        )
+    }
+
     fun observeEventsWithEntries(): Flow<List<EventWithEntries>> {
         return trackedEventDao.observeAllWithEntries()
     }

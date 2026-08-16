@@ -3,28 +3,42 @@ package com.maimonthlyhoppinings.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.maimonthlyhoppinings.data.EventTypeEntity
 import com.maimonthlyhoppinings.ui.theme.toComposeColor
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,26 +72,69 @@ fun CategorySettingsScreen(
         ) {
             item { SettingsSectionHeader("Event types") }
             items(state.categories, key = { it.id }) { category ->
-                val typeColor = category.colorEnum().toComposeColor()
-                SettingsNavRow(
-                    title = category.label,
-                    subtitle = category.colorEnum().name,
-                    onClick = {},
-                    leading = {
-                        Box(
-                            modifier = Modifier
-                                .size(18.dp)
-                                .clip(CircleShape)
-                                .background(typeColor)
-                                .border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                                    shape = CircleShape,
-                                ),
-                        )
-                    },
+                CategoryNameRow(
+                    category = category,
+                    onLabelChange = { viewModel.updateLabel(category.id, it) },
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CategoryNameRow(
+    category: EventTypeEntity,
+    onLabelChange: (String) -> Unit,
+) {
+    val typeColor = category.colorEnum().toComposeColor()
+    var draft by remember(category.id) { mutableStateOf(category.label) }
+    LaunchedEffect(category.label) {
+        if (draft != category.label) {
+            draft = category.label
+        }
+    }
+
+    fun commit() {
+        val trimmed = draft.trim()
+        if (trimmed.isNotEmpty() && trimmed != category.label) {
+            onLabelChange(trimmed)
+        } else {
+            draft = category.label
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(end = 12.dp)
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(typeColor)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                    shape = CircleShape,
+                ),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focus ->
+                        if (!focus.isFocused) commit()
+                    },
+                singleLine = true,
+                label = { Text("Name") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { commit() }),
+            )
         }
     }
 }
