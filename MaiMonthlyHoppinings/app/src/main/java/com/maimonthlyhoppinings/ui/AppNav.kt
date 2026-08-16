@@ -23,6 +23,8 @@ import com.maimonthlyhoppinings.ui.event.StartEventViewModel
 import com.maimonthlyhoppinings.ui.home.HomeScreen
 import com.maimonthlyhoppinings.ui.home.HomeViewModel
 import com.maimonthlyhoppinings.ui.settings.AppearanceScreen
+import com.maimonthlyhoppinings.ui.settings.CategorySettingsScreen
+import com.maimonthlyhoppinings.ui.settings.CategorySettingsViewModel
 import com.maimonthlyhoppinings.ui.settings.ColorThemeSettingsScreen
 import com.maimonthlyhoppinings.ui.settings.DataBackupViewModel
 import com.maimonthlyhoppinings.ui.settings.DataSettingsScreen
@@ -94,6 +96,7 @@ fun AppNav(
             composable(SettingsRoutes.Root) {
                 SettingsHomeScreen(
                     onOpenAppearance = { navController.navigate(SettingsRoutes.Appearance) },
+                    onOpenCategories = { navController.navigate(SettingsRoutes.Categories) },
                     onOpenData = { navController.navigate(SettingsRoutes.Data) },
                     onBack = { navController.popBackStack() },
                 )
@@ -142,6 +145,15 @@ fun AppNav(
                         )
                         navController.popBackStack()
                     },
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(SettingsRoutes.Categories) {
+                val categoryViewModel: CategorySettingsViewModel = viewModel(
+                    factory = CategorySettingsViewModel.factory(repository),
+                )
+                CategorySettingsScreen(
+                    viewModel = categoryViewModel,
                     onBack = { navController.popBackStack() },
                 )
             }

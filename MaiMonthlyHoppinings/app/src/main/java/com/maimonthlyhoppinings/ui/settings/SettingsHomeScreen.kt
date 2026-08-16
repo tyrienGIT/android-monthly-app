@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SettingsHomeScreen(
     onOpenAppearance: () -> Unit,
+    onOpenCategories: () -> Unit,
     onOpenData: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -50,6 +51,13 @@ fun SettingsHomeScreen(
                     title = "Appearance",
                     subtitle = "Light/dark mode, colour themes, theme builder",
                     onClick = onOpenAppearance,
+                )
+            }
+            item {
+                SettingsNavRow(
+                    title = "Categories",
+                    subtitle = "Names and colours for event types",
+                    onClick = onOpenCategories,
                 )
             }
             item {

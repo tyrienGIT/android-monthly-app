@@ -8,4 +8,5 @@ object SettingsRoutes {
     const val ColorThemes = "settings/color_themes"
     const val ThemeBuilder = "settings/theme_builder"
     const val Data = "settings/data"
+    const val Categories = "settings/categories"
 }
