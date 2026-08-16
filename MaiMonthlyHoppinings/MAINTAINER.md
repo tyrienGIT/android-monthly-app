@@ -110,7 +110,7 @@ Hard-coded list in `data/EventType.kt`. Colour comes from `EventTypeColor`, not 
 
 **Room updates must use `@Update`, never insert-or-replace, on `TrackedEvent`.** `OnConflictStrategy.REPLACE` deletes the row first; CASCADE then wipes every child entry. The repository comment on `updateEvent` exists because this already bit us.
 
-**Bump `AppDatabase` version and treat data as disposable until real migrations exist.** `fallbackToDestructiveMigration()` is on. Schema change = wipe. Version is already 10 from the event/entry/theme iterations.
+**Bump `AppDatabase` version only with a real `Migration`.** Schema JSON is exported to `app/schemas/`. Version 10 is the baseline. Do not add `fallbackToDestructiveMigration()`.
 
 **Renaming a type label is a migration.** `eventType` is a raw string. `EventType.isValid` rejects unknown values. Change labels only with a Room migration that rewrites existing rows.
 
@@ -201,7 +201,7 @@ There is no in-Cursor preview that replaces an emulator. Debug APKs land under `
 
 ## Landmines
 
-- **Destructive migrations.** Treat the DB as wipe-on-schema-change until you add real `Migration` objects and `exportSchema = true`.
+- **No destructive migrations.** Schema change without a `Migration(from, to)` in `AppDatabaseMigrations` will crash on open instead of wiping data.
 - **`allowBackup` is true** in the manifest. Local event data can be included in Android backups. Turn this off or exclude the DB before any release if that is not wanted.
 - **No encryption.** Room file is plaintext on device. Fine for a private local prototype; not fine if this becomes shared-device or Play-store health data.
 - **No Hilt / no tests.** Easy to regress heat selection, span expansion, and navigation. If you add tests, start with `EventRepository` heat + span helpers — they are pure enough to unit-test without Compose.
@@ -213,9 +213,8 @@ There is no in-Cursor preview that replaces an emulator. Debug APKs land under `
 ## Still unfinished / placeholder
 
 - Event type labels and the “tracker on top of a calendar” domain (real questions, custom properties beyond intensity).
-- Real Room migrations and schema export.
-- Tests, CI, git.
-- Backup / export / import of events.
+- Tests, CI.
+- Backup / export / import of events (ID-based; see plan).
 - Release signing, minify (`isMinifyEnabled = false`), Play listing.
 - i18n — user-facing strings are hard-coded in composables; only `app_name` is in `strings.xml`.
 - Widget, notifications, lock-screen privacy.

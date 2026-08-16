@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [TrackedEvent::class, EventEntry::class, SavedColorTheme::class],
     version = 10,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun trackedEventDao(): TrackedEventDao
@@ -26,7 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "mai_monthly_hoppinings.db",
                 )
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(*AppDatabaseMigrations.all)
                     .build()
                     .also { instance = it }
             }
