@@ -93,6 +93,10 @@ class EventRepository(
         return eventEntryDao.observeEntriesForDay(date.toEpochDay())
     }
 
+    fun observeEntriesInRange(startDate: LocalDate, endDate: LocalDate): Flow<List<EntryWithEvent>> {
+        return eventEntryDao.observeEntriesInRange(startDate.toEpochDay(), endDate.toEpochDay())
+    }
+
     fun observeEventsForDay(date: LocalDate): Flow<List<TrackedEvent>> {
         return trackedEventDao.observeOverlappingDay(date.toEpochDay())
     }

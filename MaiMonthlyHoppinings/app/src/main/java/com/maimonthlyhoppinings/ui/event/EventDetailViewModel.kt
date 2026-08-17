@@ -15,6 +15,7 @@ import java.util.Locale
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -27,6 +28,29 @@ data class EventDetailUiState(
     val heatmapEndLabel: String = "",
     val notFound: Boolean = false,
 )
+
+class EventPagerViewModel(
+    eventRepository: EventRepository,
+) : ViewModel() {
+    val eventIds: StateFlow<List<Long>> = eventRepository.observeEvents()
+        .map { events -> events.map { it.id } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
+
+    companion object {
+        fun factory(eventRepository: EventRepository): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return EventPagerViewModel(eventRepository) as T
+                }
+            }
+        }
+    }
+}
 
 class EventDetailViewModel(
     private val eventId: Long,

@@ -17,7 +17,6 @@ import com.maimonthlyhoppinings.ui.calendar.CalendarViewModel
 import com.maimonthlyhoppinings.ui.event.EntryEditorScreen
 import com.maimonthlyhoppinings.ui.event.EntryEditorViewModel
 import com.maimonthlyhoppinings.ui.event.EventDetailScreen
-import com.maimonthlyhoppinings.ui.event.EventDetailViewModel
 import com.maimonthlyhoppinings.ui.event.StartEventScreen
 import com.maimonthlyhoppinings.ui.event.StartEventViewModel
 import com.maimonthlyhoppinings.ui.home.HomeScreen
@@ -33,11 +32,14 @@ import com.maimonthlyhoppinings.ui.settings.SettingsHomeScreen
 import com.maimonthlyhoppinings.ui.settings.SettingsRoutes
 import com.maimonthlyhoppinings.ui.settings.ThemeBuilderScreen
 import com.maimonthlyhoppinings.ui.theme.ThemeViewModel
+import com.maimonthlyhoppinings.ui.trends.TrendsScreen
+import com.maimonthlyhoppinings.ui.trends.TrendsViewModel
 import java.time.LocalDate
 
 private object Routes {
     const val Home = "home"
     const val Calendar = "calendar"
+    const val Trends = "trends"
     const val EventNew = "event/new?epochDay={epochDay}"
     const val EventDetail = "event/{eventId}"
     const val EventEdit = "event/{eventId}/edit"
@@ -82,6 +84,7 @@ fun AppNav(
                 viewModel = viewModel,
                 onOpenSettings = { navController.navigate(SettingsRoutes.Graph) },
                 onOpenCalendar = { navController.navigate(Routes.Calendar) },
+                onOpenTrends = { navController.navigate(Routes.Trends) },
                 onStartEvent = { navController.navigate(Routes.eventNew()) },
                 onOpenEvent = { eventId ->
                     navController.navigate(Routes.eventDetail(eventId))
@@ -168,6 +171,16 @@ fun AppNav(
             }
         }
 
+        composable(Routes.Trends) {
+            val viewModel: TrendsViewModel = viewModel(
+                factory = TrendsViewModel.factory(repository),
+            )
+            TrendsScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+            )
+        }
+
         composable(Routes.Calendar) {
             val viewModel: CalendarViewModel = viewModel(
                 factory = CalendarViewModel.factory(repository),
@@ -233,17 +246,12 @@ fun AppNav(
             ),
         ) { entry ->
             val eventId = entry.arguments?.getLong("eventId") ?: return@composable
-            val viewModel: EventDetailViewModel = viewModel(
-                key = "event-$eventId",
-                factory = EventDetailViewModel.factory(eventId, repository),
-            )
             EventDetailScreen(
-                viewModel = viewModel,
+                eventId = eventId,
+                eventRepository = repository,
                 onBack = { navController.popBackStack() },
-                onEditEvent = { navController.navigate(Routes.eventEdit(eventId)) },
-                onAddEntry = {
-                    navController.navigate(Routes.entryNew(eventId))
-                },
+                onEditEvent = { id -> navController.navigate(Routes.eventEdit(id)) },
+                onAddEntry = { id -> navController.navigate(Routes.entryNew(id)) },
                 onOpenEntry = { entryId ->
                     navController.navigate(Routes.entryEdit(entryId))
                 },

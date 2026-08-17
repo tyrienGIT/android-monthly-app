@@ -3,6 +3,8 @@ package com.maimonthlyhoppinings.ui.event
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -32,10 +34,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maimonthlyhoppinings.data.EventEntry
+import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.data.TrackedEvent
 import com.maimonthlyhoppinings.data.dateLabel
@@ -55,19 +60,47 @@ import com.maimonthlyhoppinings.ui.theme.colorForEventType
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventDetailScreen(
-    viewModel: EventDetailViewModel,
+    eventId: Long,
+    eventRepository: EventRepository,
     onBack: () -> Unit,
-    onEditEvent: () -> Unit,
-    onAddEntry: () -> Unit,
+    onEditEvent: (Long) -> Unit,
+    onAddEntry: (Long) -> Unit,
     onOpenEntry: (Long) -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val pagerViewModel: EventPagerViewModel = viewModel(
+        factory = EventPagerViewModel.factory(eventRepository),
+    )
+    val eventIdsState = pagerViewModel.eventIds.collectAsStateWithLifecycle()
+    val eventIds = eventIdsState.value
+    val pagerState = rememberPagerState(
+        pageCount = { eventIdsState.value.size.coerceAtLeast(1) },
+    )
+    var alignedToOpenedEvent by remember(eventId) { mutableStateOf(false) }
+
+    LaunchedEffect(eventIds, eventId) {
+        val index = eventIds.indexOf(eventId)
+        if (index >= 0 && !alignedToOpenedEvent) {
+            pagerState.scrollToPage(index)
+            alignedToOpenedEvent = true
+        }
+    }
+
+    val currentEventId = eventIds.getOrNull(pagerState.currentPage) ?: eventId
+    val currentViewModel: EventDetailViewModel = viewModel(
+        key = "event-$currentEventId",
+        factory = EventDetailViewModel.factory(currentEventId, eventRepository),
+    )
+    val state by currentViewModel.uiState.collectAsStateWithLifecycle()
     var pendingDeleteEntry by remember { mutableStateOf<EventEntry?>(null) }
     var pendingDeleteEvent by remember { mutableStateOf(false) }
 
+    LaunchedEffect(currentEventId) {
+        pendingDeleteEntry = null
+        pendingDeleteEvent = false
+    }
+
     val event = state.eventWithEntries?.event
     val types = state.types
-    val typeColor = colorForEventType(event?.eventTypeId.orEmpty(), types)
 
     pendingDeleteEntry?.let { entry ->
         val parent = state.eventWithEntries?.event
@@ -76,7 +109,7 @@ fun EventDetailScreen(
                 ?: entry.dateLabel(),
             entityLabel = "entry",
             onConfirm = {
-                viewModel.deleteEntry(entry.id)
+                currentViewModel.deleteEntry(entry.id)
                 pendingDeleteEntry = null
             },
             onDismiss = { pendingDeleteEntry = null },
@@ -89,7 +122,7 @@ fun EventDetailScreen(
             entityLabel = "event",
             onConfirm = {
                 pendingDeleteEvent = false
-                viewModel.deleteEvent(onDeleted = onBack)
+                currentViewModel.deleteEvent(onDeleted = onBack)
             },
             onDismiss = { pendingDeleteEvent = false },
         )
@@ -98,7 +131,18 @@ fun EventDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(event?.displayTitle(types) ?: "Event") },
+                title = {
+                    Column {
+                        Text(event?.displayTitle(types) ?: "Event")
+                        if (eventIds.size > 1) {
+                            Text(
+                                text = "${pagerState.currentPage + 1} of ${eventIds.size}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -109,7 +153,7 @@ fun EventDetailScreen(
                 },
                 actions = {
                     if (event != null) {
-                        IconButton(onClick = onEditEvent) {
+                        IconButton(onClick = { onEditEvent(currentEventId) }) {
                             Icon(
                                 imageVector = Icons.Filled.Edit,
                                 contentDescription = "Edit event",
@@ -129,7 +173,7 @@ fun EventDetailScreen(
         floatingActionButton = {
             if (event != null) {
                 FloatingActionButton(
-                    onClick = onAddEntry,
+                    onClick = { onAddEntry(currentEventId) },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
@@ -142,6 +186,41 @@ fun EventDetailScreen(
         },
     ) { innerPadding ->
         when {
+            eventIds.isNotEmpty() -> {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    userScrollEnabled = eventIds.size > 1,
+                    beyondViewportPageCount = 1,
+                ) { page ->
+                    val pageId = eventIds.getOrNull(page) ?: eventId
+                    val pageViewModel: EventDetailViewModel = viewModel(
+                        key = "event-$pageId",
+                        factory = EventDetailViewModel.factory(pageId, eventRepository),
+                    )
+                    val pageState by pageViewModel.uiState.collectAsStateWithLifecycle()
+                    val pageEvent = pageState.eventWithEntries?.event
+                    if (pageEvent == null) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(if (pageState.notFound) "Event not found" else "Loading…")
+                        }
+                    } else {
+                        EventDetailPage(
+                            event = pageEvent,
+                            state = pageState,
+                            types = pageState.types,
+                            typeColor = colorForEventType(pageEvent.eventTypeId, pageState.types),
+                            onOpenEntry = onOpenEntry,
+                            onDeleteEntry = { pendingDeleteEntry = it },
+                        )
+                    }
+                }
+            }
             state.notFound -> {
                 Box(
                     modifier = Modifier
@@ -152,7 +231,7 @@ fun EventDetailScreen(
                     Text("Event not found")
                 }
             }
-            event == null -> {
+            else -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -162,79 +241,86 @@ fun EventDetailScreen(
                     Text("Loading…")
                 }
             }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    item {
-                        Text(
-                            text = types.label(event.eventTypeId),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = typeColor,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            text = event.dateRangeLabel(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                        if (event.details.isNotBlank()) {
-                            Text(
-                                text = event.details,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                        }
-                    }
-                    if (state.heatmapDays.isNotEmpty()) {
-                        item {
-                            EventIntensityHeatmap(
-                                days = state.heatmapDays,
-                                typeColor = typeColor,
-                                startLabel = state.heatmapStartLabel,
-                                endLabel = state.heatmapEndLabel,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                        }
-                    }
-                    item {
-                        Text(
-                            text = if (state.sortedEntries.isEmpty()) {
-                                "No entries yet"
-                            } else {
-                                "Entries"
-                            },
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                        if (state.sortedEntries.isEmpty()) {
-                            Text(
-                                text = "Add a single-day entry with optional time and intensity.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                        }
-                    }
-                    items(state.sortedEntries, key = { it.id }) { entry ->
-                        EntryRow(
-                            entry = entry,
-                            parentEvent = event,
-                            types = types,
-                            typeColor = typeColor,
-                            onClick = { onOpenEntry(entry.id) },
-                            onDelete = { pendingDeleteEntry = entry },
-                        )
-                    }
-                }
+        }
+    }
+}
+
+@Composable
+private fun EventDetailPage(
+    event: TrackedEvent,
+    state: EventDetailUiState,
+    types: EventTypeLookup,
+    typeColor: Color,
+    onOpenEntry: (Long) -> Unit,
+    onDeleteEntry: (EventEntry) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item {
+            Text(
+                text = types.label(event.eventTypeId),
+                style = MaterialTheme.typography.titleMedium,
+                color = typeColor,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = event.dateRangeLabel(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            if (event.details.isNotBlank()) {
+                Text(
+                    text = event.details,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
+        }
+        if (state.heatmapDays.isNotEmpty()) {
+            item {
+                EventIntensityHeatmap(
+                    days = state.heatmapDays,
+                    typeColor = typeColor,
+                    startLabel = state.heatmapStartLabel,
+                    endLabel = state.heatmapEndLabel,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+        item {
+            Text(
+                text = if (state.sortedEntries.isEmpty()) {
+                    "No entries yet"
+                } else {
+                    "Entries"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            if (state.sortedEntries.isEmpty()) {
+                Text(
+                    text = "Add a single-day entry with optional time and intensity.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+        items(state.sortedEntries, key = { it.id }) { entry ->
+            EntryRow(
+                entry = entry,
+                parentEvent = event,
+                types = types,
+                typeColor = typeColor,
+                onClick = { onOpenEntry(entry.id) },
+                onDelete = { onDeleteEntry(entry) },
+            )
         }
     }
 }

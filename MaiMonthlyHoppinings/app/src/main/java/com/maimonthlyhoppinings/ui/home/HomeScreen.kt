@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -57,6 +58,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onOpenSettings: () -> Unit,
     onOpenCalendar: () -> Unit,
+    onOpenTrends: () -> Unit,
     onStartEvent: () -> Unit,
     onOpenEvent: (Long) -> Unit,
 ) {
@@ -83,6 +85,12 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Filled.CalendarMonth,
                             contentDescription = "Open calendar",
+                        )
+                    }
+                    IconButton(onClick = onOpenTrends) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ShowChart,
+                            contentDescription = "Open trends",
                         )
                     }
                     IconButton(onClick = onOpenSettings) {
