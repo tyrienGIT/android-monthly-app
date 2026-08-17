@@ -139,7 +139,8 @@ fun HomeScreen(
                     ) {
                         Text(
                             text = books.active.name,
-                            maxLines = 1,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
