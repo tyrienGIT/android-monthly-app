@@ -8,7 +8,7 @@ import com.maimonthlyhoppinings.data.SavedThemeRepository
 import com.maimonthlyhoppinings.data.ThemePreferences
 import kotlinx.coroutines.runBlocking
 
-class MaiMonthlyHoppiningsApp : Application() {
+open class MaiMonthlyHoppiningsApp : Application() {
     lateinit var eventRepository: EventRepository
         private set
 
