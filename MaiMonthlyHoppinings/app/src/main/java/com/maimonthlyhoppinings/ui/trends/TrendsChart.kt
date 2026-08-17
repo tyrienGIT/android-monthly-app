@@ -4,7 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -63,7 +62,6 @@ fun TrendsChart(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(280.dp)
             .pointerInput(startEpochDay, endEpochDay) {
                 val gutter = 36.dp.toPx()
                 val bottom = 28.dp.toPx()

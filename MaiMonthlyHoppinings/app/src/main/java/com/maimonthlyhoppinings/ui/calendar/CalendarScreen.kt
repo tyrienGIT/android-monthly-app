@@ -1,5 +1,6 @@
 package com.maimonthlyhoppinings.ui.calendar
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +45,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -151,17 +154,9 @@ fun CalendarScreen(
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
-            // Upper ~2/3: scrolling calendar
-            Column(
-                modifier = Modifier
-                    .weight(2f)
-                    .fillMaxWidth(),
-            ) {
+        val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val calendarPane: @Composable (Modifier) -> Unit = { modifier ->
+            Column(modifier = modifier) {
                 WeekdayHeader(labels = state.weekdayLabels)
                 LazyColumn(
                     state = listState,
@@ -188,10 +183,8 @@ fun CalendarScreen(
                     }
                 }
             }
-
-            HorizontalDivider()
-
-            // Lower ~1/3: events for the selected day (with sub-entries)
+        }
+        val dayPane: @Composable (Modifier) -> Unit = { modifier ->
             SelectedDayEventsPane(
                 dateLabel = state.selectedDateLabel,
                 groups = state.selectedDayGroups,
@@ -199,10 +192,46 @@ fun CalendarScreen(
                 onAdd = { requestAdd() },
                 onOpenEvent = onOpenEvent,
                 onEditEntry = onEditEntry,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+                modifier = modifier,
             )
+        }
+
+        if (landscape) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            ) {
+                calendarPane(
+                    Modifier
+                        .weight(1.15f)
+                        .fillMaxHeight(),
+                )
+                VerticalDivider()
+                dayPane(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            ) {
+                calendarPane(
+                    Modifier
+                        .weight(2f)
+                        .fillMaxWidth(),
+                )
+                HorizontalDivider()
+                dayPane(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                )
+            }
         }
     }
 }
