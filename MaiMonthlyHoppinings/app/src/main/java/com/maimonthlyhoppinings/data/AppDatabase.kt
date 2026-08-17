@@ -45,8 +45,7 @@ abstract class AppDatabase : RoomDatabase() {
     }
 
     companion object {
-        @Volatile
-        private var instance: AppDatabase? = null
+        private val instances = mutableMapOf<String, AppDatabase>()
 
         private val seedTypesCallback = object : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
@@ -59,17 +58,24 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        fun getInstance(context: Context): AppDatabase {
-            return instance ?: synchronized(this) {
-                instance ?: Room.databaseBuilder(
+        fun open(context: Context, name: String): AppDatabase {
+            synchronized(this) {
+                instances[name]?.let { return it }
+                return Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "mai_monthly_hoppinings.db",
+                    name,
                 )
                     .addMigrations(*AppDatabaseMigrations.all)
                     .addCallback(seedTypesCallback)
                     .build()
-                    .also { instance = it }
+                    .also { instances[name] = it }
+            }
+        }
+
+        fun release(name: String) {
+            synchronized(this) {
+                instances.remove(name)?.close()
             }
         }
     }

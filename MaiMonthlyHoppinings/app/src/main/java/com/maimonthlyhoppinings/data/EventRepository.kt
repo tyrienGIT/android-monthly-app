@@ -1,7 +1,9 @@
 package com.maimonthlyhoppinings.data
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.LocalTime
@@ -23,17 +25,25 @@ data class EntryInput(
     val intensity: Int,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class EventRepository(
-    private val trackedEventDao: TrackedEventDao,
-    private val eventEntryDao: EventEntryDao,
-    private val eventTypeDao: EventTypeDao,
+    private val books: BookManager,
 ) {
-    fun observeTypes(): Flow<List<EventTypeEntity>> = eventTypeDao.observeAll()
+    private val trackedEventDao: TrackedEventDao
+        get() = books.database.trackedEventDao()
+    private val eventEntryDao: EventEntryDao
+        get() = books.database.eventEntryDao()
+    private val eventTypeDao: EventTypeDao
+        get() = books.database.eventTypeDao()
+
+    fun observeTypes(): Flow<List<EventTypeEntity>> {
+        return books.databaseFlow.flatMapLatest { it.eventTypeDao().observeAll() }
+    }
 
     suspend fun getTypes(): List<EventTypeEntity> = eventTypeDao.getAll()
 
     fun observeTypeLookup(): Flow<EventTypeLookup> {
-        return eventTypeDao.observeAll().map { EventTypeLookup(it) }
+        return observeTypes().map { EventTypeLookup(it) }
     }
 
     suspend fun addType(
@@ -74,15 +84,15 @@ class EventRepository(
     }
 
     fun observeEventsWithEntries(): Flow<List<EventWithEntries>> {
-        return trackedEventDao.observeAllWithEntries()
+        return books.databaseFlow.flatMapLatest { it.trackedEventDao().observeAllWithEntries() }
     }
 
     fun observeEvents(): Flow<List<TrackedEvent>> {
-        return trackedEventDao.observeAll()
+        return books.databaseFlow.flatMapLatest { it.trackedEventDao().observeAll() }
     }
 
     fun observeEvent(eventId: Long): Flow<EventWithEntries?> {
-        return trackedEventDao.observeWithEntries(eventId)
+        return books.databaseFlow.flatMapLatest { it.trackedEventDao().observeWithEntries(eventId) }
     }
 
     suspend fun getEvent(eventId: Long): EventWithEntries? {
@@ -90,15 +100,21 @@ class EventRepository(
     }
 
     fun observeEntriesForDay(date: LocalDate): Flow<List<EntryWithEvent>> {
-        return eventEntryDao.observeEntriesForDay(date.toEpochDay())
+        return books.databaseFlow.flatMapLatest {
+            it.eventEntryDao().observeEntriesForDay(date.toEpochDay())
+        }
     }
 
     fun observeEntriesInRange(startDate: LocalDate, endDate: LocalDate): Flow<List<EntryWithEvent>> {
-        return eventEntryDao.observeEntriesInRange(startDate.toEpochDay(), endDate.toEpochDay())
+        return books.databaseFlow.flatMapLatest {
+            it.eventEntryDao().observeEntriesInRange(startDate.toEpochDay(), endDate.toEpochDay())
+        }
     }
 
     fun observeEventsForDay(date: LocalDate): Flow<List<TrackedEvent>> {
-        return trackedEventDao.observeOverlappingDay(date.toEpochDay())
+        return books.databaseFlow.flatMapLatest {
+            it.trackedEventDao().observeOverlappingDay(date.toEpochDay())
+        }
     }
 
     suspend fun getEntry(entryId: Long): EntryWithEvent? {
@@ -117,11 +133,12 @@ class EventRepository(
     ): Flow<Map<Long, List<DayHeatSegment>>> {
         val start = startDate.toEpochDay()
         val end = endDate.toEpochDay()
-        return combine(
-            trackedEventDao.observeOverlappingRange(start, end),
-            eventEntryDao.observeEntriesForEventsOverlappingRange(start, end),
-            eventTypeDao.observeAll(),
-        ) { events, entryItems, types ->
+        return books.databaseFlow.flatMapLatest { db ->
+            combine(
+                db.trackedEventDao().observeOverlappingRange(start, end),
+                db.eventEntryDao().observeEntriesForEventsOverlappingRange(start, end),
+                db.eventTypeDao().observeAll(),
+            ) { events, entryItems, types ->
             val typeLookup = EventTypeLookup(types)
             val entriesByEvent = entryItems.groupBy { it.entry.eventId }
             val segmentsByDay = linkedMapOf<Long, MutableList<DayHeatSegment>>()
@@ -162,6 +179,7 @@ class EventRepository(
 
             segmentsByDay.mapValues { (_, daySegments) ->
                 selectHeatSegmentsForDay(daySegments, maxSegmentsPerDay)
+            }
             }
         }
     }

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maimonthlyhoppinings.data.EventTypeLookup
@@ -53,6 +55,9 @@ import com.maimonthlyhoppinings.data.latestEntry
 import com.maimonthlyhoppinings.data.shortDateLabel
 import com.maimonthlyhoppinings.data.shortDateRangeLabel
 import com.maimonthlyhoppinings.ui.ConfirmDeleteDialog
+import com.maimonthlyhoppinings.ui.book.BookNameDialog
+import com.maimonthlyhoppinings.ui.book.BookPickerDialog
+import com.maimonthlyhoppinings.ui.book.BookViewModel
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
 import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
 import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
@@ -63,14 +68,51 @@ import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    bookViewModel: BookViewModel,
     onOpenSettings: () -> Unit,
+    onOpenBooks: () -> Unit,
     onOpenCalendar: () -> Unit,
     onOpenTrends: () -> Unit,
     onStartEvent: () -> Unit,
     onOpenEvent: (Long) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val books by bookViewModel.uiState.collectAsStateWithLifecycle()
     var pendingDelete by remember { mutableStateOf<EventWithEntries?>(null) }
+    var showBookPicker by remember { mutableStateOf(false) }
+    var showNewBook by remember { mutableStateOf(false) }
+
+    if (showBookPicker) {
+        BookPickerDialog(
+            books = books.books,
+            activeId = books.active.id,
+            onSelect = { id ->
+                bookViewModel.switchTo(id)
+                showBookPicker = false
+            },
+            onCreate = {
+                showBookPicker = false
+                showNewBook = true
+            },
+            onManage = {
+                showBookPicker = false
+                onOpenBooks()
+            },
+            onDismiss = { showBookPicker = false },
+        )
+    }
+    if (showNewBook) {
+        BookNameDialog(
+            title = "New book",
+            initialName = "",
+            confirmLabel = "Create",
+            onConfirm = { name ->
+                bookViewModel.create(name)
+                showNewBook = false
+            },
+            onDismiss = { showNewBook = false },
+        )
+    }
 
     pendingDelete?.let { event ->
         ConfirmDeleteDialog(
@@ -87,10 +129,25 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Mai Monthly Hoppinings",
-                        modifier = Modifier.tutorialTarget(TutorialTargetIds.HOME_WELCOME),
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .tutorialTarget(TutorialTargetIds.HOME_WELCOME)
+                            .clickable { showBookPicker = true }
+                            .padding(end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = books.active.name,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            imageVector = Icons.Filled.KeyboardArrowDown,
+                            contentDescription = "Switch book",
+                        )
+                    }
                 },
                 actions = {
                     TutorialHelpAction(TutorialSection.Home)

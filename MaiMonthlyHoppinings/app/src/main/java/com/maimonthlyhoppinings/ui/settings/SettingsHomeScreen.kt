@@ -24,6 +24,7 @@ import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsHomeScreen(
+    onOpenBooks: () -> Unit,
     onOpenAppearance: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenData: () -> Unit,
@@ -56,23 +57,27 @@ fun SettingsHomeScreen(
         ) {
             item { SettingsSectionHeader("Preferences") }
             item {
-                SettingsNavRow(
-                    title = "Appearance",
-                    subtitle = "Light/dark mode, colour themes, theme builder",
-                    onClick = onOpenAppearance,
-                )
-            }
-            item {
                 Column(modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_PREFS)) {
                     SettingsNavRow(
+                        title = "Books",
+                        subtitle = "Separate journals on this phone",
+                        onClick = onOpenBooks,
+                        modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_BOOKS),
+                    )
+                    SettingsNavRow(
+                        title = "Appearance",
+                        subtitle = "Light/dark mode, colour themes, theme builder",
+                        onClick = onOpenAppearance,
+                    )
+                    SettingsNavRow(
                         title = "Categories",
-                        subtitle = "Names and colours for event types",
+                        subtitle = "Names and colours for this book",
                         onClick = onOpenCategories,
                         modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_CATEGORIES),
                     )
                     SettingsNavRow(
                         title = "Data",
-                        subtitle = "Export and import a JSON backup",
+                        subtitle = "Export and import this book’s JSON backup",
                         onClick = onOpenData,
                         modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_DATA),
                     )

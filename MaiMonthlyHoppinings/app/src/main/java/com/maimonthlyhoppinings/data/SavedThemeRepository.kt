@@ -1,15 +1,24 @@
 package com.maimonthlyhoppinings.data
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SavedThemeRepository(
-    private val savedColorThemeDao: SavedColorThemeDao,
+    private val books: BookManager,
 ) {
-    fun observeSavedThemes(): Flow<List<SavedColorTheme>> = savedColorThemeDao.observeAll()
+    fun observeSavedThemes(): Flow<List<SavedColorTheme>> {
+        return books.databaseFlow.flatMapLatest { it.savedColorThemeDao().observeAll() }
+    }
 
-    fun observeSavedTheme(id: Long): Flow<SavedColorTheme?> = savedColorThemeDao.observeById(id)
+    fun observeSavedTheme(id: Long): Flow<SavedColorTheme?> {
+        return books.databaseFlow.flatMapLatest { it.savedColorThemeDao().observeById(id) }
+    }
 
-    suspend fun getSavedTheme(id: Long): SavedColorTheme? = savedColorThemeDao.getById(id)
+    suspend fun getSavedTheme(id: Long): SavedColorTheme? {
+        return books.database.savedColorThemeDao().getById(id)
+    }
 
     suspend fun saveTheme(
         name: String,
@@ -22,7 +31,7 @@ class SavedThemeRepository(
     ): Long {
         val trimmed = name.trim()
         require(trimmed.isNotEmpty()) { "Theme name is required" }
-        return savedColorThemeDao.insert(
+        return books.database.savedColorThemeDao().insert(
             SavedColorTheme(
                 name = trimmed,
                 lightPrimaryArgb = lightPrimaryArgb,
@@ -36,6 +45,6 @@ class SavedThemeRepository(
     }
 
     suspend fun deleteTheme(id: Long) {
-        savedColorThemeDao.deleteById(id)
+        books.database.savedColorThemeDao().deleteById(id)
     }
 }

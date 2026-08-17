@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.maimonthlyhoppinings.data.AppPreferences
 import com.maimonthlyhoppinings.data.AutoBackupRepository
+import com.maimonthlyhoppinings.data.AutoBackupFrequency
 import com.maimonthlyhoppinings.data.AutoBackupSettings
 import com.maimonthlyhoppinings.data.BackupRepository
 import kotlinx.coroutines.flow.SharingStarted
@@ -42,6 +43,12 @@ class DataBackupViewModel(
         viewModelScope.launch {
             appPreferences.setAutoBackupRetainMonths(months)
             autoBackupRepository.applyRetention()
+        }
+    }
+
+    fun setFrequency(frequency: AutoBackupFrequency, days: Int? = null) {
+        viewModelScope.launch {
+            appPreferences.setAutoBackupFrequency(frequency, days)
         }
     }
 

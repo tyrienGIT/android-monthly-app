@@ -1,16 +1,20 @@
 package com.maimonthlyhoppinings
 
 import android.app.Application
-import com.maimonthlyhoppinings.data.AppDatabase
 import com.maimonthlyhoppinings.data.AppPreferences
 import com.maimonthlyhoppinings.data.AutoBackupRepository
 import com.maimonthlyhoppinings.data.BackupRepository
+import com.maimonthlyhoppinings.data.BookManager
+import com.maimonthlyhoppinings.data.BookPreferences
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.SavedThemeRepository
 import com.maimonthlyhoppinings.data.ThemePreferences
 import kotlinx.coroutines.runBlocking
 
 open class MaiMonthlyHoppiningsApp : Application() {
+    lateinit var bookManager: BookManager
+        private set
+
     lateinit var eventRepository: EventRepository
         private set
 
@@ -31,28 +35,24 @@ open class MaiMonthlyHoppiningsApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        val database = AppDatabase.getInstance(this)
-        eventRepository = EventRepository(
-            trackedEventDao = database.trackedEventDao(),
-            eventEntryDao = database.eventEntryDao(),
-            eventTypeDao = database.eventTypeDao(),
-        )
-        savedThemeRepository = SavedThemeRepository(database.savedColorThemeDao())
         themePreferences = ThemePreferences(this)
         appPreferences = AppPreferences(this)
-        runBlocking { themePreferences.applyStoredNightMode() }
+        bookManager = BookManager(this, BookPreferences(this))
+        runBlocking {
+            themePreferences.applyStoredNightMode()
+            bookManager.start()
+        }
+        eventRepository = EventRepository(bookManager)
+        savedThemeRepository = SavedThemeRepository(bookManager)
         backupRepository = BackupRepository(
-            database = database,
-            eventTypeDao = database.eventTypeDao(),
-            trackedEventDao = database.trackedEventDao(),
-            eventEntryDao = database.eventEntryDao(),
-            savedColorThemeDao = database.savedColorThemeDao(),
+            books = bookManager,
             themePreferences = themePreferences,
         )
         autoBackupRepository = AutoBackupRepository(
             context = this,
             backupRepository = backupRepository,
             appPreferences = appPreferences,
+            bookManager = bookManager,
         )
     }
 }

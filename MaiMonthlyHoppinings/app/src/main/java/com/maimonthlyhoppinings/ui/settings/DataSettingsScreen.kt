@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -18,6 +20,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,8 +33,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.maimonthlyhoppinings.data.AutoBackupFrequency
 import com.maimonthlyhoppinings.data.BackupFile
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -44,7 +49,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private const val BackupFileName = "mai-monthly-hoppinings-backup.json"
+private fun backupFileName(bookName: String): String {
+    val slug = bookName.lowercase()
+        .replace(Regex("[^a-z0-9]+"), "-")
+        .trim('-')
+        .ifEmpty { "book" }
+    return "$slug-backup.json"
+}
 
 private sealed interface BackupPrompt {
     data object Hidden : BackupPrompt
@@ -55,18 +66,33 @@ private sealed interface BackupPrompt {
 
 private val retainMonthOptions = listOf(1, 2, 3, 6, 12)
 private val maxCountOptions = listOf(30, 60, 90, 180)
+private val frequencyPresets = listOf(
+    AutoBackupFrequency.EVERY_OPEN,
+    AutoBackupFrequency.DAILY,
+    AutoBackupFrequency.EVERY_3_DAYS,
+    AutoBackupFrequency.WEEKLY,
+)
 private val lastBackupFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
+
+private sealed interface NumberPrompt {
+    data object Hidden : NumberPrompt
+    data object FrequencyDays : NumberPrompt
+    data object RetainMonths : NumberPrompt
+    data object MaxCount : NumberPrompt
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DataSettingsScreen(
     viewModel: DataBackupViewModel,
+    bookName: String,
     onBack: () -> Unit,
 ) {
     val autoBackup by viewModel.autoBackup.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var prompt by remember { mutableStateOf<BackupPrompt>(BackupPrompt.Hidden) }
+    var numberPrompt by remember { mutableStateOf<NumberPrompt>(NumberPrompt.Hidden) }
     var pendingExportJson by remember { mutableStateOf<String?>(null) }
 
     val createDocument = rememberLauncherForActivityResult(
@@ -150,12 +176,12 @@ fun DataSettingsScreen(
                     SettingsSectionHeader("Backup")
                     SettingsNavRow(
                         title = "Export",
-                        subtitle = "Save a JSON backup of events, types, and themes",
+                        subtitle = "Save a JSON backup of this book’s events, types, and themes",
                         onClick = {
                             scope.launch {
                                 try {
                                     pendingExportJson = viewModel.export()
-                                    createDocument.launch(BackupFileName)
+                                    createDocument.launch(backupFileName(bookName))
                                 } catch (e: Exception) {
                                     prompt = BackupPrompt.Message(e.message ?: "Export failed")
                                 }
@@ -177,22 +203,65 @@ fun DataSettingsScreen(
             item { SettingsSectionHeader("Automatic copies") }
             item {
                 SettingsSwitchRow(
-                    title = "Daily backup",
+                    title = "Automatic backup",
                     subtitle = if (autoBackup.enabled) {
                         val last = if (autoBackup.lastBackupEpochDay >= 0L) {
                             "Last copy ${LocalDate.ofEpochDay(autoBackup.lastBackupEpochDay).format(lastBackupFormatter)}. "
                         } else {
                             ""
                         }
-                        last + "Once a day when you open the app. Stays on this device."
+                        last + "Runs when you open the app, if the interval has passed. Stays on this device."
                     } else {
-                        "Write a JSON copy once a day when you open the app."
+                        "Write a JSON copy when you open the app, on the interval you pick."
                     },
                     checked = autoBackup.enabled,
                     onCheckedChange = viewModel::setAutoBackupEnabled,
                 )
             }
             if (autoBackup.enabled) {
+                item {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        Text(
+                            text = "Frequency",
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = "How often a new copy is written.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            frequencyPresets.forEach { frequency ->
+                                FilterChip(
+                                    selected = autoBackup.frequency == frequency,
+                                    onClick = { viewModel.setFrequency(frequency) },
+                                    label = { Text(frequency.label) },
+                                )
+                            }
+                            FilterChip(
+                                selected = autoBackup.frequency == AutoBackupFrequency.CUSTOM,
+                                onClick = { numberPrompt = NumberPrompt.FrequencyDays },
+                                label = {
+                                    Text(
+                                        if (autoBackup.frequency == AutoBackupFrequency.CUSTOM) {
+                                            if (autoBackup.frequencyDays == 1) {
+                                                "Every 1 day"
+                                            } else {
+                                                "Every ${autoBackup.frequencyDays} days"
+                                            }
+                                        } else {
+                                            "Other"
+                                        },
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
                 item {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         Text(
@@ -218,6 +287,20 @@ fun DataSettingsScreen(
                                     },
                                 )
                             }
+                            val customRetain = autoBackup.retainMonths !in retainMonthOptions
+                            FilterChip(
+                                selected = customRetain,
+                                onClick = { numberPrompt = NumberPrompt.RetainMonths },
+                                label = {
+                                    Text(
+                                        if (customRetain) {
+                                            if (autoBackup.retainMonths == 1) "1 month" else "${autoBackup.retainMonths} months"
+                                        } else {
+                                            "Other"
+                                        },
+                                    )
+                                },
+                            )
                         }
                     }
                 }
@@ -244,6 +327,14 @@ fun DataSettingsScreen(
                                     label = { Text("$count") },
                                 )
                             }
+                            val customMax = autoBackup.maxCount !in maxCountOptions
+                            FilterChip(
+                                selected = customMax,
+                                onClick = { numberPrompt = NumberPrompt.MaxCount },
+                                label = {
+                                    Text(if (customMax) "${autoBackup.maxCount}" else "Other")
+                                },
+                            )
                         }
                     }
                 }
@@ -259,8 +350,8 @@ fun DataSettingsScreen(
                 title = { Text("Import backup") },
                 text = {
                     Text(
-                        "Merge keeps existing items and updates matching IDs. " +
-                            "Replace all deletes local items that are not in this file.",
+                        "This only changes the open book. Merge keeps its items and updates " +
+                            "matching IDs. Replace all deletes items in this book that are not in the file.",
                     )
                 },
                 confirmButton = {
@@ -282,11 +373,11 @@ fun DataSettingsScreen(
         is BackupPrompt.ConfirmReplace -> {
             AlertDialog(
                 onDismissRequest = { prompt = BackupPrompt.Hidden },
-                title = { Text("Replace all data?") },
+                title = { Text("Replace this book?") },
                 text = {
                     Text(
-                        "Events, entries, types, and custom themes that are not in this " +
-                            "backup will be deleted. This can't be undone.",
+                        "Events, entries, types, and custom themes in this book that are not " +
+                            "in this backup will be deleted. Other books are left alone. This can't be undone.",
                     )
                 },
                 confirmButton = {
@@ -316,4 +407,91 @@ fun DataSettingsScreen(
             )
         }
     }
+
+    when (numberPrompt) {
+        NumberPrompt.Hidden -> Unit
+        NumberPrompt.FrequencyDays -> {
+            AutoBackupNumberDialog(
+                title = "Every how many days?",
+                initial = autoBackup.frequencyDays.coerceAtLeast(1),
+                min = 1,
+                max = 3_650,
+                onConfirm = { days ->
+                    viewModel.setFrequency(AutoBackupFrequency.CUSTOM, days)
+                    numberPrompt = NumberPrompt.Hidden
+                },
+                onDismiss = { numberPrompt = NumberPrompt.Hidden },
+            )
+        }
+        NumberPrompt.RetainMonths -> {
+            AutoBackupNumberDialog(
+                title = "Keep for how many months?",
+                initial = autoBackup.retainMonths,
+                min = 1,
+                max = 240,
+                onConfirm = { months ->
+                    viewModel.setRetainMonths(months)
+                    numberPrompt = NumberPrompt.Hidden
+                },
+                onDismiss = { numberPrompt = NumberPrompt.Hidden },
+            )
+        }
+        NumberPrompt.MaxCount -> {
+            AutoBackupNumberDialog(
+                title = "How many copies?",
+                initial = autoBackup.maxCount,
+                min = 1,
+                max = 9_999,
+                onConfirm = { count ->
+                    viewModel.setMaxCount(count)
+                    numberPrompt = NumberPrompt.Hidden
+                },
+                onDismiss = { numberPrompt = NumberPrompt.Hidden },
+            )
+        }
+    }
+}
+
+@Composable
+private fun AutoBackupNumberDialog(
+    title: String,
+    initial: Int,
+    min: Int,
+    max: Int,
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember(initial) { mutableStateOf(initial.toString()) }
+    val parsed = text.toIntOrNull()
+    val valid = parsed != null && parsed in min..max
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { candidate ->
+                    if (candidate.length <= 5 && candidate.all { it.isDigit() }) {
+                        text = candidate
+                    }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { parsed?.let(onConfirm) },
+                enabled = valid,
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
 }

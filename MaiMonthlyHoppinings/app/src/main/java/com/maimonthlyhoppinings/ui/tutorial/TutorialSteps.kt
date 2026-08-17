@@ -55,12 +55,15 @@ object TutorialTargetIds {
     const val START_INTRO = "start_intro"
     const val START_CATEGORY_DATES = "start_category_dates"
     const val START_SPAN = "start_span"
+    const val START_EMOJI = "start_emoji"
 
     const val ENTRY_INTENSITY = "entry_intensity"
+    const val ENTRY_EMOJI = "entry_emoji"
     const val ENTRY_TIME = "entry_time"
     const val ENTRY_DAY = "entry_day"
 
     const val SETTINGS_PREFS = "settings_prefs"
+    const val SETTINGS_BOOKS = "settings_books"
     const val SETTINGS_CATEGORIES = "settings_categories"
     const val SETTINGS_DATA = "settings_data"
     const val SETTINGS_VIEW_TUTORIAL = "settings_view_tutorial"
@@ -76,7 +79,7 @@ object TutorialSteps {
             screen = TutorialScreen.Home,
             targetId = TutorialTargetIds.HOME_WELCOME,
             title = "Just for you, on this phone",
-            body = "Nothing is uploaded. An event is a category and a stretch of days. Entries are the individual days you log under it.",
+            body = "Nothing is uploaded. The title is your current book — tap it to add another journal. An event is a category and a stretch of days.",
         ),
         TutorialStep(
             id = "full_home_fab",
@@ -125,7 +128,7 @@ object TutorialSteps {
             screen = TutorialScreen.Settings,
             targetId = TutorialTargetIds.SETTINGS_PREFS,
             title = "Make it yours",
-            body = "Rename types and change colours. Backup is a file you save on this device.",
+            body = "Books keep separate journals. Categories and backup belong to the book that’s open.",
         ),
     )
 
@@ -135,7 +138,7 @@ object TutorialSteps {
             screen = TutorialScreen.Home,
             targetId = TutorialTargetIds.HOME_WELCOME,
             title = "Just for you, on this phone",
-            body = "Home lists your events. Each one holds the days you log under it.",
+            body = "Home lists this book’s events. Tap the title to switch or add another book.",
         ),
         TutorialStep(
             id = "home_fab",
@@ -245,7 +248,7 @@ object TutorialSteps {
             screen = TutorialScreen.StartEvent,
             targetId = TutorialTargetIds.START_CATEGORY_DATES,
             title = "Type and dates",
-            body = "Pick the category and the span. A title is optional.",
+            body = "Pick the category and the span. A title and tags are optional.",
         ),
         TutorialStep(
             id = "start_span",
@@ -253,6 +256,13 @@ object TutorialSteps {
             targetId = TutorialTargetIds.START_SPAN,
             title = "The span can grow",
             body = "Logging a day outside these dates widens the event. You can also stretch it here later.",
+        ),
+        TutorialStep(
+            id = "start_emoji",
+            screen = TutorialScreen.StartEvent,
+            targetId = TutorialTargetIds.START_EMOJI,
+            title = "Tag it",
+            body = "Optional emoji or kaomoji — up to three. Switch kaomoji by mood: Period, Anxious, Happy, Sad, Cramps.",
         ),
     )
 
@@ -278,15 +288,29 @@ object TutorialSteps {
             title = "One day under the event",
             body = "An entry is a single day. Outside the event’s dates? The span grows to fit.",
         ),
+        TutorialStep(
+            id = "entry_emoji",
+            screen = TutorialScreen.EntryEditor,
+            targetId = TutorialTargetIds.ENTRY_EMOJI,
+            title = "Tag this day",
+            body = "Optional emoji or kaomoji just for this entry. The event can have its own tags too.",
+        ),
     )
 
     val settings: List<TutorialStep> = listOf(
+        TutorialStep(
+            id = "settings_books",
+            screen = TutorialScreen.Settings,
+            targetId = TutorialTargetIds.SETTINGS_BOOKS,
+            title = "Books",
+            body = "Add another journal if you want a separate set of events. Your first book is already here.",
+        ),
         TutorialStep(
             id = "settings_categories",
             screen = TutorialScreen.Settings,
             targetId = TutorialTargetIds.SETTINGS_CATEGORIES,
             title = "Categories",
-            body = "Rename types and change their colours. Appearance is here too.",
+            body = "Rename types and change their colours for this book. Appearance is here too.",
         ),
         TutorialStep(
             id = "settings_data",
@@ -317,7 +341,7 @@ object TutorialSteps {
             screen = TutorialScreen.Data,
             targetId = TutorialTargetIds.DATA_MERGE_REPLACE,
             title = "Merge or replace",
-            body = "Merge keeps what you have and updates matching IDs. Replace all throws away anything not in the file.",
+            body = "Merge keeps this book and updates matching IDs. Replace all throws away anything in this book that is not in the file.",
         ),
     )
 

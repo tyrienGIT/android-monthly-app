@@ -4,12 +4,14 @@ import android.content.Context
 import kotlinx.coroutines.flow.first
 import java.io.File
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 class AutoBackupRepository(
     private val context: Context,
     private val backupRepository: BackupRepository,
     private val appPreferences: AppPreferences,
+    private val bookManager: BookManager,
 ) {
     private val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
 
@@ -19,21 +21,25 @@ class AutoBackupRepository(
     suspend fun runIfDue() {
         val settings = appPreferences.autoBackupSettings.first()
         if (!settings.enabled) return
-        val today = LocalDate.now().toEpochDay()
-        if (settings.lastBackupEpochDay == today) {
+        if (!settings.frequency.isDue(
+                lastEpochDay = settings.lastBackupEpochDay,
+                lastMillis = settings.lastBackupMillis,
+                customDays = settings.frequencyDays,
+            )
+        ) {
             prune(settings)
             return
         }
-        writeToday()
-        appPreferences.setLastAutoBackupEpochDay(today)
+        writeSnapshot()
+        appPreferences.setLastAutoBackup(LocalDate.now().toEpochDay(), System.currentTimeMillis())
         prune(appPreferences.autoBackupSettings.first())
     }
 
     suspend fun backupNow() {
         val settings = appPreferences.autoBackupSettings.first()
         if (!settings.enabled) return
-        writeToday()
-        appPreferences.setLastAutoBackupEpochDay(LocalDate.now().toEpochDay())
+        writeSnapshot()
+        appPreferences.setLastAutoBackup(LocalDate.now().toEpochDay(), System.currentTimeMillis())
         prune(settings)
     }
 
@@ -41,9 +47,12 @@ class AutoBackupRepository(
         prune(appPreferences.autoBackupSettings.first())
     }
 
-    private suspend fun writeToday() {
+    private suspend fun writeSnapshot() {
         val json = backupRepository.export()
-        val name = "mai-auto-${LocalDate.now().format(dateFormat)}.json"
+        val stamp = LocalDate.now().format(dateFormat) +
+            "-" + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss"))
+        val slug = bookManager.activeBook.value.fileSlug()
+        val name = "mai-auto-$stamp-$slug.json"
         val target = File(backupDir, name)
         val temp = File(backupDir, "$name.tmp")
         temp.writeText(json, Charsets.UTF_8)
@@ -75,6 +84,7 @@ class AutoBackupRepository(
 
     private fun dateFromName(name: String): LocalDate? {
         val stamp = name.removePrefix("mai-auto-").removeSuffix(".json")
-        return runCatching { LocalDate.parse(stamp, dateFormat) }.getOrNull()
+        val datePart = stamp.take(10)
+        return runCatching { LocalDate.parse(datePart, dateFormat) }.getOrNull()
     }
 }

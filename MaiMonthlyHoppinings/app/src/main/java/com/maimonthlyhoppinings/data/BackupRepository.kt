@@ -4,13 +4,20 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.flow.first
 
 class BackupRepository(
-    private val database: AppDatabase,
-    private val eventTypeDao: EventTypeDao,
-    private val trackedEventDao: TrackedEventDao,
-    private val eventEntryDao: EventEntryDao,
-    private val savedColorThemeDao: SavedColorThemeDao,
+    private val books: BookManager,
     private val themePreferences: ThemePreferences,
 ) {
+    private val database: AppDatabase
+        get() = books.database
+    private val eventTypeDao: EventTypeDao
+        get() = database.eventTypeDao()
+    private val trackedEventDao: TrackedEventDao
+        get() = database.trackedEventDao()
+    private val eventEntryDao: EventEntryDao
+        get() = database.eventEntryDao()
+    private val savedColorThemeDao: SavedColorThemeDao
+        get() = database.savedColorThemeDao()
+
     suspend fun export(): String {
         val types = eventTypeDao.getAll()
         val events = trackedEventDao.getAll()
