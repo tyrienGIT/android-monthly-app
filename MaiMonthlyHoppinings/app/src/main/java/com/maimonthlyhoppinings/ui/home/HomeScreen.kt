@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,7 +59,7 @@ import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
 import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
 import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -137,7 +140,7 @@ fun HomeScreen(
             }
         },
     ) { innerPadding ->
-        if (state.events.isEmpty()) {
+        if (!state.hasAnyEvents) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -173,13 +176,38 @@ fun HomeScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
-                items(state.events, key = { it.event.id }) { event ->
-                    HomeEventRow(
-                        event = event,
-                        types = state.types,
-                        onClick = { onOpenEvent(event.event.id) },
-                        onDelete = { pendingDelete = event },
-                    )
+                item {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        HomeRange.entries.forEach { range ->
+                            FilterChip(
+                                selected = state.range == range,
+                                onClick = { viewModel.setRange(range) },
+                                label = { Text(range.label) },
+                            )
+                        }
+                    }
+                }
+                if (state.events.isEmpty()) {
+                    item {
+                        Text(
+                            text = "Nothing in this range. Try a wider window, or All.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                } else {
+                    items(state.events, key = { it.event.id }) { event ->
+                        HomeEventRow(
+                            event = event,
+                            types = state.types,
+                            onClick = { onOpenEvent(event.event.id) },
+                            onDelete = { pendingDelete = event },
+                        )
+                    }
                 }
             }
         }
