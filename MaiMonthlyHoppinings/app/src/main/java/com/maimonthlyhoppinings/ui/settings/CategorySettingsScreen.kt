@@ -3,7 +3,6 @@ package com.maimonthlyhoppinings.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,9 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -108,6 +108,7 @@ private fun CategoryNameRow(
 ) {
     val typeColor = category.colorEnum().toComposeColor()
     var draft by remember(category.id) { mutableStateOf(category.label) }
+    var colorMenuOpen by remember(category.id) { mutableStateOf(false) }
     LaunchedEffect(category.label) {
         if (draft != category.label) {
             draft = category.label
@@ -129,18 +130,53 @@ private fun CategoryNameRow(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .padding(end = 12.dp)
-                .size(18.dp)
-                .clip(CircleShape)
-                .background(typeColor)
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                    shape = CircleShape,
-                ),
-        )
+        Box(modifier = Modifier.padding(end = 12.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(typeColor)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                        shape = CircleShape,
+                    )
+                    .clickable { colorMenuOpen = true },
+            )
+            DropdownMenu(
+                expanded = colorMenuOpen,
+                onDismissRequest = { colorMenuOpen = false },
+            ) {
+                EventTypeColor.entries.forEach { color ->
+                    val swatch = color.toComposeColor()
+                    val selected = color == category.colorEnum()
+                    DropdownMenuItem(
+                        text = { Text(color.name) },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(swatch)
+                                    .border(
+                                        width = if (selected) 2.dp else 1.dp,
+                                        color = if (selected) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else {
+                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                                        },
+                                        shape = CircleShape,
+                                    ),
+                            )
+                        },
+                        onClick = {
+                            onColorChange(color)
+                            colorMenuOpen = false
+                        },
+                    )
+                }
+            }
+        }
         Column(modifier = Modifier.weight(1f)) {
             OutlinedTextField(
                 value = draft,
@@ -155,31 +191,6 @@ private fun CategoryNameRow(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { commit() }),
             )
-            LazyRow(
-                modifier = Modifier.padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(EventTypeColor.entries, key = { it.name }) { color ->
-                    val swatch = color.toComposeColor()
-                    val selected = color == category.colorEnum()
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(swatch)
-                            .border(
-                                width = if (selected) 3.dp else 1.dp,
-                                color = if (selected) {
-                                    MaterialTheme.colorScheme.onSurface
-                                } else {
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
-                                },
-                                shape = CircleShape,
-                            )
-                            .clickable { onColorChange(color) },
-                    )
-                }
-            }
         }
     }
 }
