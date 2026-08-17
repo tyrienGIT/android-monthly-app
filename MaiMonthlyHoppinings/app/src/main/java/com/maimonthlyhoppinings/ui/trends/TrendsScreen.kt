@@ -103,7 +103,7 @@ fun TrendsScreen(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text = "Peak intensity per category each day. Tap a point for that day.",
+                            text = "One category at a time reads clearest. Drag across to inspect a day.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),

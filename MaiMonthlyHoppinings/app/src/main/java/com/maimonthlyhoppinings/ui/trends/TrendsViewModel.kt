@@ -50,7 +50,7 @@ class TrendsViewModel(
     eventRepository: EventRepository,
 ) : ViewModel() {
     private val range = MutableStateFlow(TrendsRange.THREE_MONTHS)
-    private val hiddenTypeIds = MutableStateFlow<Set<String>>(emptySet())
+    private val hiddenOverride = MutableStateFlow<Set<String>?>(null)
     private val selectedEpochDay = MutableStateFlow<Long?>(null)
 
     private val endDate = LocalDate.now()
@@ -58,7 +58,7 @@ class TrendsViewModel(
 
     val uiState: StateFlow<TrendsUiState> = combine(
         range,
-        hiddenTypeIds,
+        hiddenOverride,
         selectedEpochDay,
         eventRepository.observeEntriesInRange(widestStart, endDate),
         eventRepository.observeTypeLookup(),
@@ -67,7 +67,16 @@ class TrendsViewModel(
         val startEpoch = startDate.toEpochDay()
         val endEpoch = endDate.toEpochDay()
         val inRange = entries.filter { it.entry.dateEpochDay in startEpoch..endEpoch }
-        val series = buildSeries(inRange, types, hidden)
+        val focusedTypeId = inRange
+            .groupingBy { it.event.eventTypeId }
+            .eachCount()
+            .maxByOrNull { it.value }
+            ?.key
+        val effectiveHidden = hidden ?: types.all
+            .map { it.id }
+            .filter { it != focusedTypeId }
+            .toSet()
+        val series = buildSeries(inRange, types, effectiveHidden)
         val visibleTypeIds = series.filter { it.visible }.map { it.typeId }.toSet()
         val dayEntries = selectedDay?.let { day ->
             inRange.filter {
@@ -96,7 +105,9 @@ class TrendsViewModel(
     }
 
     fun toggleType(typeId: String) {
-        hiddenTypeIds.value = hiddenTypeIds.value.toMutableSet().also { ids ->
+        val currentHidden = hiddenOverride.value
+            ?: uiState.value.series.filterNot { it.visible }.map { it.typeId }.toSet()
+        hiddenOverride.value = currentHidden.toMutableSet().also { ids ->
             if (!ids.add(typeId)) ids.remove(typeId)
         }
     }

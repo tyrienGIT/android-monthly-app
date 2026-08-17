@@ -1,6 +1,7 @@
 package com.maimonthlyhoppinings.ui.trends
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -9,8 +10,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.drawText
@@ -20,11 +25,10 @@ import com.maimonthlyhoppinings.ui.theme.toComposeColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.math.hypot
+import kotlin.math.roundToInt
 
-private const val MIN_INTENSITY = 1
+private const val MIN_INTENSITY = 0
 private const val MAX_INTENSITY = 10
-private const val CONNECT_GAP_DAYS = 4L
 
 private val monthTickFormatter = DateTimeFormatter.ofPattern("MMM", Locale.getDefault())
 
@@ -41,52 +45,52 @@ fun TrendsChart(
     val labelStyle = MaterialTheme.typography.labelSmall.copy(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
-    val selectedLineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)
+    val selectedLineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.28f)
     val darkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val span = (endEpochDay - startEpochDay).coerceAtLeast(1L)
     val visible = series.filter { it.visible && it.points.isNotEmpty() }
     val monthTicks = remember(startEpochDay, endEpochDay) {
         monthStarts(startEpochDay, endEpochDay)
     }
+    val fillAlpha = if (visible.size <= 1) 0.38f else 0.16f
+    val strokeWidth = if (visible.size <= 1) 3.dp else 2.dp
+
+    fun plotFor(width: Float, height: Float, labelGutter: Float, bottomGutter: Float): ChartPlot {
+        return ChartPlot(width, height, labelGutter, bottomGutter)
+    }
 
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(240.dp)
-            .pointerInput(visible, startEpochDay, endEpochDay) {
+            .height(280.dp)
+            .pointerInput(startEpochDay, endEpochDay) {
+                val gutter = 36.dp.toPx()
+                val bottom = 28.dp.toPx()
                 detectTapGestures { tap ->
-                    val plot = ChartPlot(
-                        width = size.width.toFloat(),
-                        height = size.height.toFloat(),
-                        labelGutter = 36.dp.toPx(),
-                        bottomGutter = 28.dp.toPx(),
-                    )
-                    val hit = visible
-                        .flatMap { it.points }
-                        .minByOrNull { point ->
-                            val pos = plot.point(point.epochDay, point.intensity, startEpochDay, span)
-                            hypot(pos.x - tap.x, pos.y - tap.y)
-                        }
-                    if (hit != null) {
-                        val pos = plot.point(hit.epochDay, hit.intensity, startEpochDay, span)
-                        val distance = hypot(pos.x - tap.x, pos.y - tap.y)
-                        onSelectDay(if (distance <= 36.dp.toPx()) hit.epochDay else null)
-                    } else {
-                        onSelectDay(null)
-                    }
+                    val plot = plotFor(size.width.toFloat(), size.height.toFloat(), gutter, bottom)
+                    onSelectDay(plot.dayAtX(tap.x, startEpochDay, span))
                 }
+            }
+            .pointerInput(startEpochDay, endEpochDay) {
+                val gutter = 36.dp.toPx()
+                val bottom = 28.dp.toPx()
+                detectHorizontalDragGestures(
+                    onDragStart = { start ->
+                        val plot = plotFor(size.width.toFloat(), size.height.toFloat(), gutter, bottom)
+                        onSelectDay(plot.dayAtX(start.x, startEpochDay, span))
+                    },
+                    onHorizontalDrag = { change, _ ->
+                        change.consume()
+                        val plot = plotFor(size.width.toFloat(), size.height.toFloat(), gutter, bottom)
+                        onSelectDay(plot.dayAtX(change.position.x, startEpochDay, span))
+                    },
+                )
             },
     ) {
-        val plot = ChartPlot(
-            width = size.width,
-            height = size.height,
-            labelGutter = 36.dp.toPx(),
-            bottomGutter = 28.dp.toPx(),
-        )
+        val plot = plotFor(size.width, size.height, 36.dp.toPx(), 28.dp.toPx())
 
-        for (intensity in MIN_INTENSITY..MAX_INTENSITY) {
-            if (intensity % 2 != 0 && intensity != MIN_INTENSITY) continue
+        for (intensity in listOf(0, 5, 10)) {
             val y = plot.yForIntensity(intensity)
             drawLine(
                 color = gridColor,
@@ -113,8 +117,39 @@ fun TrendsChart(
             drawText(
                 textLayoutResult = label,
                 topLeft = Offset(
-                    x = x - label.size.width / 2f,
+                    x = (x - label.size.width / 2f).coerceIn(plot.left, plot.right - label.size.width),
                     y = plot.bottom + 8.dp.toPx(),
+                ),
+            )
+        }
+
+        visible.forEach { line ->
+            val color = line.color.toComposeColor(darkTheme)
+            val positions = dailyPositions(line.points, plot, startEpochDay, endEpochDay, span)
+            if (positions.size < 2) return@forEach
+
+            val curve = smoothPath(positions)
+            val fill = Path().apply {
+                addPath(curve)
+                lineTo(positions.last().x, plot.bottom)
+                lineTo(positions.first().x, plot.bottom)
+                close()
+            }
+            drawPath(
+                path = fill,
+                brush = Brush.verticalGradient(
+                    colors = listOf(color.copy(alpha = fillAlpha), color.copy(alpha = 0.02f)),
+                    startY = plot.top,
+                    endY = plot.bottom,
+                ),
+            )
+            drawPath(
+                path = curve,
+                color = color.copy(alpha = 0.92f),
+                style = Stroke(
+                    width = strokeWidth.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round,
                 ),
             )
         }
@@ -125,44 +160,58 @@ fun TrendsChart(
                 color = selectedLineColor,
                 start = Offset(x, plot.top),
                 end = Offset(x, plot.bottom),
-                strokeWidth = 1.5.dp.toPx(),
+                strokeWidth = 1.25.dp.toPx(),
             )
-        }
-
-        visible.forEach { line ->
-            val color = line.color.toComposeColor(darkTheme)
-            val positions = line.points.map { point ->
-                plot.point(point.epochDay, point.intensity, startEpochDay, span)
-            }
-            line.points.zipWithNext().forEachIndexed { index, (from, to) ->
-                if (to.epochDay - from.epochDay <= CONNECT_GAP_DAYS) {
-                    drawLine(
-                        color = color,
-                        start = positions[index],
-                        end = positions[index + 1],
-                        strokeWidth = 3.dp.toPx(),
-                        cap = StrokeCap.Round,
-                    )
-                }
-            }
-            line.points.forEachIndexed { index, point ->
-                val center = positions[index]
-                val selected = point.epochDay == selectedEpochDay
-                drawCircle(
-                    color = color,
-                    radius = if (selected) 7.dp.toPx() else 4.5.dp.toPx(),
-                    center = center,
-                )
-                if (selected) {
-                    drawCircle(
-                        color = Color.White,
-                        radius = 2.5.dp.toPx(),
-                        center = center,
-                    )
+            visible.forEach { line ->
+                val intensity = line.points
+                    .firstOrNull { it.epochDay == day }
+                    ?.intensity
+                    ?: 0
+                if (intensity > 0) {
+                    val color = line.color.toComposeColor(darkTheme)
+                    val center = plot.point(day, intensity, startEpochDay, span)
+                    drawCircle(color = color, radius = 6.dp.toPx(), center = center)
+                    drawCircle(color = Color.White, radius = 2.5.dp.toPx(), center = center)
                 }
             }
         }
     }
+}
+
+private fun dailyPositions(
+    points: List<TrendPoint>,
+    plot: ChartPlot,
+    startEpochDay: Long,
+    endEpochDay: Long,
+    span: Long,
+): List<Offset> {
+    val byDay = points.associate { it.epochDay to it.intensity }
+    return (startEpochDay..endEpochDay).map { day ->
+        plot.point(day, byDay[day] ?: 0, startEpochDay, span)
+    }
+}
+
+private fun smoothPath(points: List<Offset>): Path {
+    val path = Path()
+    if (points.isEmpty()) return path
+    path.moveTo(points.first().x, points.first().y)
+    if (points.size == 1) return path
+    for (index in 0 until points.lastIndex) {
+        val previous = points.getOrElse(index - 1) { points[index] }
+        val current = points[index]
+        val next = points[index + 1]
+        val after = points.getOrElse(index + 2) { next }
+        val control1 = Offset(
+            x = current.x + (next.x - previous.x) / 6f,
+            y = current.y + (next.y - previous.y) / 6f,
+        )
+        val control2 = Offset(
+            x = next.x - (after.x - current.x) / 6f,
+            y = next.y - (after.y - current.y) / 6f,
+        )
+        path.cubicTo(control1.x, control1.y, control2.x, control2.y, next.x, next.y)
+    }
+    return path
 }
 
 private data class ChartPlot(
@@ -188,6 +237,11 @@ private data class ChartPlot(
 
     fun point(epochDay: Long, intensity: Int, startEpochDay: Long, span: Long): Offset {
         return Offset(xForDay(epochDay, startEpochDay, span), yForIntensity(intensity))
+    }
+
+    fun dayAtX(x: Float, startEpochDay: Long, span: Long): Long {
+        val t = ((x - left) / (right - left)).coerceIn(0f, 1f)
+        return startEpochDay + (t * span).roundToInt().toLong()
     }
 }
 
