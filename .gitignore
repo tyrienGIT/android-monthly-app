@@ -1,0 +1,5 @@
+# Sideload / Play bundles — keep build output out of git
+*.apk
+*.ap_
+*.aab
+/dist/
