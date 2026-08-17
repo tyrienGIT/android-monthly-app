@@ -178,6 +178,9 @@ fun AppNav(
             TrendsScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
+                onOpenEvent = { eventId ->
+                    navController.navigate(Routes.eventDetail(eventId))
+                },
             )
         }
 

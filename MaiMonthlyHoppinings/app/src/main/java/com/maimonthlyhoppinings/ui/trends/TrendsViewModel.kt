@@ -7,6 +7,7 @@ import com.maimonthlyhoppinings.data.EntryWithEvent
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.EventTypeColor
 import com.maimonthlyhoppinings.data.EventTypeLookup
+import com.maimonthlyhoppinings.data.displayTitle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,11 +36,32 @@ data class TrendSeries(
     val entryCount: Int,
 )
 
+data class TrendEventRow(
+    val eventId: Long,
+    val title: String,
+    val typeId: String,
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val entryCount: Int,
+    val averageIntensity: Float?,
+)
+
+private data class TrendFilters(
+    val range: TrendsRange,
+    val hidden: Set<String>?,
+    val selectedDay: Long?,
+    val focusedEventId: Long?,
+)
+
 data class TrendsUiState(
     val range: TrendsRange = TrendsRange.THREE_MONTHS,
     val startDate: LocalDate = LocalDate.now().minusDays(TrendsRange.THREE_MONTHS.days - 1),
     val endDate: LocalDate = LocalDate.now(),
     val series: List<TrendSeries> = emptyList(),
+    val categoryStats: List<TrendSeries> = emptyList(),
+    val events: List<TrendEventRow> = emptyList(),
+    val focusedEvent: TrendEventRow? = null,
+    val focusedEntries: List<EntryWithEvent> = emptyList(),
     val selectedEpochDay: Long? = null,
     val selectedDayEntries: List<EntryWithEvent> = emptyList(),
     val types: EventTypeLookup = EventTypeLookup(emptyList()),
@@ -52,43 +74,80 @@ class TrendsViewModel(
     private val range = MutableStateFlow(TrendsRange.THREE_MONTHS)
     private val hiddenOverride = MutableStateFlow<Set<String>?>(null)
     private val selectedEpochDay = MutableStateFlow<Long?>(null)
+    private val focusedEventId = MutableStateFlow<Long?>(null)
 
     private val endDate = LocalDate.now()
     private val widestStart = endDate.minusDays(TrendsRange.YEAR.days - 1)
 
-    val uiState: StateFlow<TrendsUiState> = combine(
+    private val filters = combine(
         range,
         hiddenOverride,
         selectedEpochDay,
+        focusedEventId,
+    ) { selectedRange, hidden, selectedDay, focusedId ->
+        TrendFilters(selectedRange, hidden, selectedDay, focusedId)
+    }
+
+    val uiState: StateFlow<TrendsUiState> = combine(
+        filters,
         eventRepository.observeEntriesInRange(widestStart, endDate),
         eventRepository.observeTypeLookup(),
-    ) { selectedRange, hidden, selectedDay, entries, types ->
-        val startDate = endDate.minusDays(selectedRange.days - 1)
-        val startEpoch = startDate.toEpochDay()
-        val endEpoch = endDate.toEpochDay()
+    ) { filter, entries, types ->
+        val rangeEnd = endDate
+        val rangeStart = rangeEnd.minusDays(filter.range.days - 1)
+        val startEpoch = rangeStart.toEpochDay()
+        val endEpoch = rangeEnd.toEpochDay()
         val inRange = entries.filter { it.entry.dateEpochDay in startEpoch..endEpoch }
         val focusedTypeId = inRange
             .groupingBy { it.event.eventTypeId }
             .eachCount()
             .maxByOrNull { it.value }
             ?.key
-        val effectiveHidden = hidden ?: types.all
+        val effectiveHidden = filter.hidden ?: types.all
             .map { it.id }
             .filter { it != focusedTypeId }
             .toSet()
-        val series = buildSeries(inRange, types, effectiveHidden)
-        val visibleTypeIds = series.filter { it.visible }.map { it.typeId }.toSet()
-        val dayEntries = selectedDay?.let { day ->
-            inRange.filter {
-                it.entry.dateEpochDay == day && it.event.eventTypeId in visibleTypeIds
-            }.sortedBy { it.event.eventTypeId }
+        val visibleTypeIds = types.all
+            .map { it.id }
+            .filter { it !in effectiveHidden }
+            .toSet()
+        val visibleEntries = inRange.filter { it.event.eventTypeId in visibleTypeIds }
+        val eventRows = buildEventRows(visibleEntries, types)
+        val focused = eventRows.firstOrNull { it.eventId == filter.focusedEventId }
+        val focusedEntries = if (focused != null) {
+            visibleEntries
+                .filter { it.event.id == focused.eventId }
+                .sortedBy { it.entry.dateEpochDay }
+        } else {
+            emptyList()
+        }
+        val chartEntries = if (focused != null) focusedEntries else visibleEntries
+        val categoryStats = buildSeries(inRange, types, effectiveHidden)
+        val chartStart = if (focused != null) {
+            focused.startDate.minusDays(3).coerceAtLeast(rangeStart)
+        } else {
+            rangeStart
+        }
+        val chartEnd = if (focused != null) {
+            focused.endDate.plusDays(3).coerceAtMost(rangeEnd)
+        } else {
+            rangeEnd
+        }
+        val series = buildSeries(chartEntries, types, effectiveHidden)
+        val dayEntries = filter.selectedDay?.let { day ->
+            visibleEntries.filter { it.entry.dateEpochDay == day }
+                .sortedBy { it.event.eventTypeId }
         }.orEmpty()
         TrendsUiState(
-            range = selectedRange,
-            startDate = startDate,
-            endDate = endDate,
+            range = filter.range,
+            startDate = chartStart,
+            endDate = chartEnd,
             series = series,
-            selectedEpochDay = selectedDay,
+            categoryStats = categoryStats,
+            events = eventRows.sortedByDescending { it.startDate },
+            focusedEvent = focused,
+            focusedEntries = focusedEntries,
+            selectedEpochDay = filter.selectedDay,
             selectedDayEntries = dayEntries,
             types = types,
             hasAnyPoints = series.any { it.points.isNotEmpty() },
@@ -102,18 +161,29 @@ class TrendsViewModel(
     fun setRange(next: TrendsRange) {
         range.value = next
         selectedEpochDay.value = null
+        focusedEventId.value = null
     }
 
     fun toggleType(typeId: String) {
         val currentHidden = hiddenOverride.value
-            ?: uiState.value.series.filterNot { it.visible }.map { it.typeId }.toSet()
-        hiddenOverride.value = currentHidden.toMutableSet().also { ids ->
+            ?: uiState.value.categoryStats.filterNot { it.visible }.map { it.typeId }.toSet()
+        val nextHidden = currentHidden.toMutableSet().also { ids ->
             if (!ids.add(typeId)) ids.remove(typeId)
+        }
+        hiddenOverride.value = nextHidden
+        val focused = uiState.value.focusedEvent
+        if (focused != null && focused.typeId in nextHidden) {
+            focusedEventId.value = null
         }
     }
 
     fun selectDay(epochDay: Long?) {
         selectedEpochDay.value = epochDay
+    }
+
+    fun focusEvent(eventId: Long?) {
+        focusedEventId.value = eventId
+        selectedEpochDay.value = null
     }
 
     companion object {
@@ -124,6 +194,26 @@ class TrendsViewModel(
                     return TrendsViewModel(eventRepository) as T
                 }
             }
+        }
+
+        internal fun buildEventRows(
+            entries: List<EntryWithEvent>,
+            types: EventTypeLookup,
+        ): List<TrendEventRow> {
+            return entries
+                .groupBy { it.event.id }
+                .map { (_, items) ->
+                    val event = items.first().event
+                    TrendEventRow(
+                        eventId = event.id,
+                        title = event.displayTitle(types),
+                        typeId = event.eventTypeId,
+                        startDate = LocalDate.ofEpochDay(event.startDateEpochDay),
+                        endDate = LocalDate.ofEpochDay(event.endDateEpochDay),
+                        entryCount = items.size,
+                        averageIntensity = items.map { it.entry.intensity }.average().toFloat(),
+                    )
+                }
         }
 
         internal fun buildSeries(
