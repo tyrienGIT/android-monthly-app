@@ -51,6 +51,10 @@ import com.maimonthlyhoppinings.data.shortDateLabel
 import com.maimonthlyhoppinings.data.shortDateRangeLabel
 import com.maimonthlyhoppinings.ui.ConfirmDeleteDialog
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
+import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
+import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
+import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,25 +83,42 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mai Monthly Hoppinings") },
+                title = {
+                    Text(
+                        text = "Mai Monthly Hoppinings",
+                        modifier = Modifier.tutorialTarget(TutorialTargetIds.HOME_WELCOME),
+                    )
+                },
                 actions = {
-                    IconButton(onClick = onOpenCalendar) {
-                        Icon(
-                            imageVector = Icons.Filled.CalendarMonth,
-                            contentDescription = "Open calendar",
-                        )
-                    }
-                    IconButton(onClick = onOpenTrends) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ShowChart,
-                            contentDescription = "Open trends",
-                        )
-                    }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = "Settings",
-                        )
+                    TutorialHelpAction(TutorialSection.Home)
+                    Row(modifier = Modifier.tutorialTarget(TutorialTargetIds.HOME_NAV_ICONS)) {
+                        IconButton(
+                            onClick = onOpenCalendar,
+                            modifier = Modifier.tutorialTarget(TutorialTargetIds.HOME_CALENDAR),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CalendarMonth,
+                                contentDescription = "Open calendar",
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenTrends,
+                            modifier = Modifier.tutorialTarget(TutorialTargetIds.HOME_TRENDS),
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ShowChart,
+                                contentDescription = "Open trends",
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenSettings,
+                            modifier = Modifier.tutorialTarget(TutorialTargetIds.HOME_SETTINGS),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = "Settings",
+                            )
+                        }
                     }
                 },
             )
@@ -105,6 +126,7 @@ fun HomeScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onStartEvent,
+                modifier = Modifier.tutorialTarget(TutorialTargetIds.HOME_FAB),
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
             ) {

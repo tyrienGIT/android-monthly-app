@@ -2,6 +2,7 @@ package com.maimonthlyhoppinings.ui.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,6 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.maimonthlyhoppinings.data.BackupFile
+import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
+import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
+import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -114,6 +119,9 @@ fun DataSettingsScreen(
                         )
                     }
                 },
+                actions = {
+                    TutorialHelpAction(TutorialSection.Data)
+                },
             )
         },
     ) { innerPadding ->
@@ -123,33 +131,34 @@ fun DataSettingsScreen(
                 .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 24.dp),
         ) {
-            item { SettingsSectionHeader("Backup") }
             item {
-                SettingsNavRow(
-                    title = "Export",
-                    subtitle = "Save a JSON backup of events, types, and themes",
-                    onClick = {
-                        scope.launch {
-                            try {
-                                pendingExportJson = viewModel.export()
-                                createDocument.launch(BackupFileName)
-                            } catch (e: Exception) {
-                                prompt = BackupPrompt.Message(e.message ?: "Export failed")
+                Column(modifier = Modifier.tutorialTarget(TutorialTargetIds.DATA_LOCAL)) {
+                    SettingsSectionHeader("Backup")
+                    SettingsNavRow(
+                        title = "Export",
+                        subtitle = "Save a JSON backup of events, types, and themes",
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    pendingExportJson = viewModel.export()
+                                    createDocument.launch(BackupFileName)
+                                } catch (e: Exception) {
+                                    prompt = BackupPrompt.Message(e.message ?: "Export failed")
+                                }
                             }
-                        }
-                    },
-                )
-            }
-            item {
-                SettingsNavRow(
-                    title = "Import",
-                    subtitle = "Restore from a JSON backup",
-                    onClick = {
-                        openDocument.launch(
-                            arrayOf("application/json", "application/octet-stream", "text/*"),
-                        )
-                    },
-                )
+                        },
+                    )
+                    SettingsNavRow(
+                        title = "Import",
+                        subtitle = "Restore from a JSON backup",
+                        onClick = {
+                            openDocument.launch(
+                                arrayOf("application/json", "application/octet-stream", "text/*"),
+                            )
+                        },
+                        modifier = Modifier.tutorialTarget(TutorialTargetIds.DATA_MERGE_REPLACE),
+                    )
+                }
             }
         }
     }

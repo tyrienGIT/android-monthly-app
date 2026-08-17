@@ -56,6 +56,10 @@ import com.maimonthlyhoppinings.data.displayTitle
 import com.maimonthlyhoppinings.data.startTimeLabel
 import com.maimonthlyhoppinings.ui.ConfirmDeleteDialog
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
+import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
+import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
+import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,7 +136,7 @@ fun EventDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
+                    Column(modifier = Modifier.tutorialTarget(TutorialTargetIds.EVENT_SWIPE)) {
                         Text(event?.displayTitle(types) ?: "Event")
                         if (eventIds.size > 1) {
                             Text(
@@ -152,6 +156,7 @@ fun EventDetailScreen(
                     }
                 },
                 actions = {
+                    TutorialHelpAction(TutorialSection.EventDetail)
                     if (event != null) {
                         IconButton(onClick = { onEditEvent(currentEventId) }) {
                             Icon(
@@ -174,6 +179,7 @@ fun EventDetailScreen(
             if (event != null) {
                 FloatingActionButton(
                     onClick = { onAddEntry(currentEventId) },
+                    modifier = Modifier.tutorialTarget(TutorialTargetIds.EVENT_ADD),
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
@@ -288,7 +294,9 @@ private fun EventDetailPage(
                     typeColor = typeColor,
                     startLabel = state.heatmapStartLabel,
                     endLabel = state.heatmapEndLabel,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .tutorialTarget(TutorialTargetIds.EVENT_HEATMAP),
                 )
             }
         }
@@ -301,7 +309,9 @@ private fun EventDetailPage(
                 },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .tutorialTarget(TutorialTargetIds.EVENT_ENTRIES),
             )
             if (state.sortedEntries.isEmpty()) {
                 Text(

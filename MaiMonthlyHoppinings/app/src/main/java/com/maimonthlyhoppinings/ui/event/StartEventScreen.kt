@@ -1,6 +1,7 @@
 package com.maimonthlyhoppinings.ui.event
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,6 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maimonthlyhoppinings.ui.ConfirmSaveDialog
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
+import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
+import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
+import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,6 +97,9 @@ fun StartEventScreen(
                         )
                     }
                 },
+                actions = {
+                    TutorialHelpAction(TutorialSection.StartEvent)
+                },
             )
         },
     ) { innerPadding ->
@@ -111,6 +119,7 @@ fun StartEventScreen(
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.tutorialTarget(TutorialTargetIds.START_INTRO),
                 )
             }
             item {
@@ -125,21 +134,26 @@ fun StartEventScreen(
                 )
             }
             item {
-                EventTypeDropdown(
-                    selectedTypeId = state.draft.eventTypeId,
-                    types = state.types,
-                    typeColor = typeColor,
-                    onTypeSelected = viewModel::onEventTypeChange,
-                )
-            }
-            item {
-                DateRangeField(
-                    startLabel = state.startDateLabel,
-                    endLabel = state.endDateLabel,
-                    typeColor = typeColor,
-                    onStartClick = { dateRangePickTarget = DateRangePickTarget.Start },
-                    onEndClick = { dateRangePickTarget = DateRangePickTarget.End },
-                )
+                Column(
+                    modifier = Modifier.tutorialTarget(TutorialTargetIds.START_CATEGORY_DATES),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    EventTypeDropdown(
+                        selectedTypeId = state.draft.eventTypeId,
+                        types = state.types,
+                        typeColor = typeColor,
+                        onTypeSelected = viewModel::onEventTypeChange,
+                    )
+                    Column(modifier = Modifier.tutorialTarget(TutorialTargetIds.START_SPAN)) {
+                        DateRangeField(
+                            startLabel = state.startDateLabel,
+                            endLabel = state.endDateLabel,
+                            typeColor = typeColor,
+                            onStartClick = { dateRangePickTarget = DateRangePickTarget.Start },
+                            onEndClick = { dateRangePickTarget = DateRangePickTarget.End },
+                        )
+                    }
+                }
             }
             item {
                 OutlinedTextField(

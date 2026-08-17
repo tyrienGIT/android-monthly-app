@@ -63,6 +63,10 @@ import com.maimonthlyhoppinings.ui.theme.heatContentColor
 import com.maimonthlyhoppinings.ui.theme.intensityHeatAlpha
 import com.maimonthlyhoppinings.ui.theme.toComposeColor
 import com.maimonthlyhoppinings.ui.theme.withIntensityHeat
+import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
+import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
+import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 import androidx.compose.ui.graphics.Brush
 import java.time.LocalDate
 import java.util.Locale
@@ -144,7 +148,11 @@ fun CalendarScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { requestAdd() }) {
+                    TutorialHelpAction(TutorialSection.Calendar)
+                    IconButton(
+                        onClick = { requestAdd() },
+                        modifier = Modifier.tutorialTarget(TutorialTargetIds.CALENDAR_PLUS),
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Add,
                             contentDescription = "Add entry",
@@ -156,7 +164,7 @@ fun CalendarScreen(
     ) { innerPadding ->
         val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
         val calendarPane: @Composable (Modifier) -> Unit = { modifier ->
-            Column(modifier = modifier) {
+            Column(modifier = modifier.tutorialTarget(TutorialTargetIds.CALENDAR_HEAT)) {
                 WeekdayHeader(labels = state.weekdayLabels)
                 LazyColumn(
                     state = listState,
@@ -192,7 +200,7 @@ fun CalendarScreen(
                 onAdd = { requestAdd() },
                 onOpenEvent = onOpenEvent,
                 onEditEntry = onEditEntry,
-                modifier = modifier,
+                modifier = modifier.tutorialTarget(TutorialTargetIds.CALENDAR_DAY_PANE),
             )
         }
 

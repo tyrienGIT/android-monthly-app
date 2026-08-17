@@ -1,10 +1,19 @@
 package com.maimonthlyhoppinings.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,6 +43,12 @@ import com.maimonthlyhoppinings.ui.settings.ThemeBuilderScreen
 import com.maimonthlyhoppinings.ui.theme.ThemeViewModel
 import com.maimonthlyhoppinings.ui.trends.TrendsScreen
 import com.maimonthlyhoppinings.ui.trends.TrendsViewModel
+import com.maimonthlyhoppinings.ui.tutorial.LocalTutorialController
+import com.maimonthlyhoppinings.ui.tutorial.LocalTutorialTargets
+import com.maimonthlyhoppinings.ui.tutorial.TutorialOverlay
+import com.maimonthlyhoppinings.ui.tutorial.TutorialScreen
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetRegistry
+import com.maimonthlyhoppinings.ui.tutorial.TutorialViewModel
 import java.time.LocalDate
 
 private object Routes {
@@ -71,11 +86,49 @@ fun AppNav(
     val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
     val activeColorTheme by themeViewModel.activeColorTheme.collectAsStateWithLifecycle()
     val savedThemes by themeViewModel.savedThemes.collectAsStateWithLifecycle()
+    val tutorialTargets = remember { TutorialTargetRegistry() }
+    val tutorialViewModel: TutorialViewModel = viewModel(
+        factory = TutorialViewModel.factory(app.appPreferences),
+    )
+    val tutorialState by tutorialViewModel.uiState.collectAsStateWithLifecycle()
 
-    NavHost(
-        navController = navController,
-        startDestination = Routes.Home,
+    LaunchedEffect(Unit) {
+        tutorialViewModel.startFirstRunIfNeeded()
+    }
+
+    val tourScreen = tutorialState.step?.screen
+    LaunchedEffect(tutorialState.active, tutorialState.isFullTour, tourScreen) {
+        if (!tutorialState.active || !tutorialState.isFullTour || tourScreen == null) {
+            return@LaunchedEffect
+        }
+        syncFullTourNavigation(navController, tourScreen)
+    }
+
+    fun leaveFullTourIfNeeded(wasFullTour: Boolean) {
+        if (wasFullTour) {
+            navController.popBackStack(Routes.Home, inclusive = false)
+        }
+    }
+
+    BackHandler(enabled = tutorialState.active) {
+        if (tutorialState.isFirst) {
+            val wasFullTour = tutorialState.isFullTour
+            tutorialViewModel.skip()
+            leaveFullTourIfNeeded(wasFullTour)
+        } else {
+            tutorialViewModel.back()
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalTutorialTargets provides tutorialTargets,
+        LocalTutorialController provides tutorialViewModel,
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = Routes.Home,
+            ) {
         composable(Routes.Home) {
             val viewModel: HomeViewModel = viewModel(
                 factory = HomeViewModel.factory(repository),
@@ -101,6 +154,10 @@ fun AppNav(
                     onOpenAppearance = { navController.navigate(SettingsRoutes.Appearance) },
                     onOpenCategories = { navController.navigate(SettingsRoutes.Categories) },
                     onOpenData = { navController.navigate(SettingsRoutes.Data) },
+                    onReplayTutorial = {
+                        navController.popBackStack(Routes.Home, inclusive = false)
+                        tutorialViewModel.startFullTour()
+                    },
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -345,5 +402,75 @@ fun AppNav(
                 onSaved = { navController.popBackStack() },
             )
         }
+            }
+
+            if (tutorialState.active) {
+                TutorialOverlay(
+                    state = tutorialState,
+                    targets = tutorialTargets.targets,
+                    onBack = { tutorialViewModel.back() },
+                    onNext = {
+                        if (tutorialState.isLast) {
+                            val wasFullTour = tutorialState.isFullTour
+                            tutorialViewModel.finish()
+                            leaveFullTourIfNeeded(wasFullTour)
+                        } else {
+                            tutorialViewModel.next()
+                        }
+                    },
+                    onSkip = {
+                        val wasFullTour = tutorialState.isFullTour
+                        tutorialViewModel.skip()
+                        leaveFullTourIfNeeded(wasFullTour)
+                    },
+                )
+            }
+        }
     }
+}
+
+private fun syncFullTourNavigation(
+    navController: NavHostController,
+    screen: TutorialScreen,
+) {
+    when (screen) {
+        TutorialScreen.Home -> {
+            if (!navController.isAt(Routes.Home)) {
+                navController.popBackStack(Routes.Home, inclusive = false)
+            }
+        }
+        TutorialScreen.Calendar -> {
+            if (!navController.isAt(Routes.Calendar)) {
+                navController.navigate(Routes.Calendar) {
+                    popUpTo(Routes.Home)
+                    launchSingleTop = true
+                }
+            }
+        }
+        TutorialScreen.Trends -> {
+            if (!navController.isAt(Routes.Trends)) {
+                navController.navigate(Routes.Trends) {
+                    popUpTo(Routes.Home)
+                    launchSingleTop = true
+                }
+            }
+        }
+        TutorialScreen.Settings -> {
+            if (!navController.isAt(SettingsRoutes.Graph)) {
+                navController.navigate(SettingsRoutes.Graph) {
+                    popUpTo(Routes.Home)
+                    launchSingleTop = true
+                }
+            }
+        }
+        TutorialScreen.EventDetail,
+        TutorialScreen.StartEvent,
+        TutorialScreen.EntryEditor,
+        TutorialScreen.Data,
+        -> Unit
+    }
+}
+
+private fun NavHostController.isAt(route: String): Boolean {
+    return currentDestination?.hierarchy?.any { it.route == route } == true
 }

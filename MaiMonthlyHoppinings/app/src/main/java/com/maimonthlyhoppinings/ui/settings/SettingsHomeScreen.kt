@@ -1,5 +1,6 @@
 package com.maimonthlyhoppinings.ui.settings
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
+import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
+import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,6 +27,7 @@ fun SettingsHomeScreen(
     onOpenAppearance: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenData: () -> Unit,
+    onReplayTutorial: () -> Unit,
     onBack: () -> Unit,
 ) {
     Scaffold(
@@ -35,6 +41,9 @@ fun SettingsHomeScreen(
                             contentDescription = "Back",
                         )
                     }
+                },
+                actions = {
+                    TutorialHelpAction(TutorialSection.Settings)
                 },
             )
         },
@@ -54,17 +63,28 @@ fun SettingsHomeScreen(
                 )
             }
             item {
-                SettingsNavRow(
-                    title = "Categories",
-                    subtitle = "Names and colours for event types",
-                    onClick = onOpenCategories,
-                )
+                Column(modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_PREFS)) {
+                    SettingsNavRow(
+                        title = "Categories",
+                        subtitle = "Names and colours for event types",
+                        onClick = onOpenCategories,
+                        modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_CATEGORIES),
+                    )
+                    SettingsNavRow(
+                        title = "Data",
+                        subtitle = "Export and import a JSON backup",
+                        onClick = onOpenData,
+                        modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_DATA),
+                    )
+                }
             }
+            item { SettingsSectionHeader("Help") }
             item {
                 SettingsNavRow(
-                    title = "Data",
-                    subtitle = "Export and import a JSON backup",
-                    onClick = onOpenData,
+                    title = "View tutorial",
+                    subtitle = "Walk through Home, Calendar, and Trends on the real screens.",
+                    onClick = onReplayTutorial,
+                    modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_VIEW_TUTORIAL),
                 )
             }
         }

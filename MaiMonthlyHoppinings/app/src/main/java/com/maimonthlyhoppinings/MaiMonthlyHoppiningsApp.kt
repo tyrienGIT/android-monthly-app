@@ -2,6 +2,7 @@ package com.maimonthlyhoppinings
 
 import android.app.Application
 import com.maimonthlyhoppinings.data.AppDatabase
+import com.maimonthlyhoppinings.data.AppPreferences
 import com.maimonthlyhoppinings.data.BackupRepository
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.SavedThemeRepository
@@ -18,6 +19,9 @@ open class MaiMonthlyHoppiningsApp : Application() {
     lateinit var themePreferences: ThemePreferences
         private set
 
+    lateinit var appPreferences: AppPreferences
+        private set
+
     lateinit var backupRepository: BackupRepository
         private set
 
@@ -31,6 +35,7 @@ open class MaiMonthlyHoppiningsApp : Application() {
         )
         savedThemeRepository = SavedThemeRepository(database.savedColorThemeDao())
         themePreferences = ThemePreferences(this)
+        appPreferences = AppPreferences(this)
         runBlocking { themePreferences.applyStoredNightMode() }
         backupRepository = BackupRepository(
             database = database,

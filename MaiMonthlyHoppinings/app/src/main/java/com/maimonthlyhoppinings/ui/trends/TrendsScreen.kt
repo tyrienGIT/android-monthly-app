@@ -51,6 +51,10 @@ import com.maimonthlyhoppinings.data.displayTitle
 import com.maimonthlyhoppinings.data.shortDateLabel
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
 import com.maimonthlyhoppinings.ui.theme.toComposeColor
+import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
+import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
+import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -88,6 +92,9 @@ fun TrendsScreen(
                         )
                     }
                 },
+                actions = {
+                    TutorialHelpAction(TutorialSection.Trends)
+                },
             )
         },
     ) { innerPadding ->
@@ -106,7 +113,8 @@ fun TrendsScreen(
                     modifier = Modifier
                         .weight(1.2f)
                         .fillMaxHeight()
-                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
+                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp)
+                        .tutorialTarget(TutorialTargetIds.TRENDS_WAVE),
                 )
                 LazyColumn(
                     modifier = Modifier
@@ -135,6 +143,7 @@ fun TrendsScreen(
                         expandChart = false,
                         onSelectDay = viewModel::selectDay,
                         onShowAllEvents = { viewModel.focusEvent(null) },
+                        modifier = Modifier.tutorialTarget(TutorialTargetIds.TRENDS_WAVE),
                     )
                 }
                 trendsDetailItems(state, focused, viewModel, onOpenEvent)
@@ -166,6 +175,7 @@ private fun LazyListScope.trendsFilterItems(
     if (state.categoryStats.isNotEmpty() && focused == null) {
         item {
             FlowRow(
+                modifier = Modifier.tutorialTarget(TutorialTargetIds.TRENDS_CHIPS),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -214,6 +224,11 @@ private fun LazyListScope.trendsDetailItems(
                 text = "Summary",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
+                modifier = if (state.events.isEmpty()) {
+                    Modifier.tutorialTarget(TutorialTargetIds.TRENDS_EVENTS)
+                } else {
+                    Modifier
+                },
             )
         }
         item {
@@ -279,6 +294,7 @@ private fun LazyListScope.trendsDetailItems(
                 text = "Events",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.tutorialTarget(TutorialTargetIds.TRENDS_EVENTS),
             )
         }
         items(state.events, key = { it.eventId }) { event ->

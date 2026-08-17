@@ -2,6 +2,7 @@ package com.maimonthlyhoppinings.ui.event
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maimonthlyhoppinings.ui.ConfirmSaveDialog
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
+import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
+import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
+import com.maimonthlyhoppinings.ui.tutorial.TutorialTargetIds
+import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 import java.time.LocalTime
 import kotlin.math.roundToInt
 
@@ -118,6 +123,9 @@ fun EntryEditorScreen(
                         )
                     }
                 },
+                actions = {
+                    TutorialHelpAction(TutorialSection.EntryEditor)
+                },
             )
         },
     ) { innerPadding ->
@@ -153,7 +161,9 @@ fun EntryEditorScreen(
             item {
                 OutlinedButton(
                     onClick = { showDatePicker = true },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .tutorialTarget(TutorialTargetIds.ENTRY_DAY),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = typeColor),
                     border = BorderStroke(1.dp, typeColor),
                 ) {
@@ -168,7 +178,9 @@ fun EntryEditorScreen(
             item {
                 OutlinedButton(
                     onClick = { showTimePicker = true },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .tutorialTarget(TutorialTargetIds.ENTRY_TIME),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = typeColor),
                     border = BorderStroke(1.dp, typeColor),
                 ) {
@@ -181,32 +193,34 @@ fun EntryEditorScreen(
                 }
             }
             item {
-                Text(
-                    text = "Intensity",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium,
-                    color = typeColor,
-                )
-                Text(
-                    text = "${state.draft.intensity} / 10",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = typeColor,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-                Slider(
-                    value = state.draft.intensity.toFloat(),
-                    onValueChange = { viewModel.onIntensityChange(it.roundToInt()) },
-                    valueRange = 1f..10f,
-                    steps = 8,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = typeColor,
-                        activeTrackColor = typeColor,
-                        inactiveTrackColor = typeColor.copy(alpha = 0.25f),
-                        activeTickColor = onTypeColor,
-                        inactiveTickColor = typeColor.copy(alpha = 0.4f),
-                    ),
-                )
+                Column(modifier = Modifier.tutorialTarget(TutorialTargetIds.ENTRY_INTENSITY)) {
+                    Text(
+                        text = "Intensity",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = typeColor,
+                    )
+                    Text(
+                        text = "${state.draft.intensity} / 10",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = typeColor,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                    Slider(
+                        value = state.draft.intensity.toFloat(),
+                        onValueChange = { viewModel.onIntensityChange(it.roundToInt()) },
+                        valueRange = 1f..10f,
+                        steps = 8,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = SliderDefaults.colors(
+                            thumbColor = typeColor,
+                            activeTrackColor = typeColor,
+                            inactiveTrackColor = typeColor.copy(alpha = 0.25f),
+                            activeTickColor = onTypeColor,
+                            inactiveTickColor = typeColor.copy(alpha = 0.4f),
+                        ),
+                    )
+                }
             }
             item {
                 OutlinedTextField(
