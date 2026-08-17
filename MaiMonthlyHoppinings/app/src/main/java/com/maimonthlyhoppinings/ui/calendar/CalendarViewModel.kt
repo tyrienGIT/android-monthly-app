@@ -33,6 +33,7 @@ data class CalendarUiState(
     val selectedDateLabel: String,
     val selectedDayGroups: List<DayEventGroup> = emptyList(),
     val allEvents: List<TrackedEvent> = emptyList(),
+    val pickableEvents: List<TrackedEvent> = emptyList(),
     val types: EventTypeLookup = EventTypeLookup(emptyList()),
 )
 
@@ -103,6 +104,7 @@ class CalendarViewModel(
                 selectedDateLabel = date.format(selectedDateFormatter),
                 selectedDayGroups = groups,
                 allEvents = allEvents,
+                pickableEvents = pickableEvents(allEvents, today),
                 types = types,
             )
         }
@@ -136,6 +138,22 @@ class CalendarViewModel(
         private const val WEEKS_AFTER = 52
         private val selectedDateFormatter =
             DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.getDefault())
+
+        private const val PICKABLE_EVENT_DAYS = 365L
+
+        internal fun pickableEvents(
+            events: List<TrackedEvent>,
+            today: LocalDate,
+        ): List<TrackedEvent> {
+            val cutoff = today.minusDays(PICKABLE_EVENT_DAYS).toEpochDay()
+            return events
+                .filter { it.endDateEpochDay >= cutoff }
+                .sortedWith(
+                    compareByDescending<TrackedEvent> { it.endDateEpochDay }
+                        .thenByDescending { it.startDateEpochDay }
+                        .thenByDescending { it.id },
+                )
+        }
 
         private val entryComparator =
             compareBy<EventEntry> { it.startTimeMinutesOfDay == null }

@@ -95,7 +95,7 @@ fun CalendarScreen(
     if (showPickEvent) {
         PickEventForEntryDialog(
             date = state.selectedDate,
-            events = state.allEvents,
+            events = state.pickableEvents,
             types = state.types,
             onStartNewEvent = {
                 showPickEvent = false

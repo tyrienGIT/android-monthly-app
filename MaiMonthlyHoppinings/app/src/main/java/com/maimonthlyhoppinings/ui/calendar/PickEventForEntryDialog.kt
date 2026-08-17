@@ -47,23 +47,15 @@ fun PickEventForEntryDialog(
         text = {
             Column {
                 Text(
-                    text = "Add an entry under an event, or start a new event.",
+                    text = "Add a new event, or pick one from the last year.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 12.dp),
                 )
                 LazyColumn {
-                    items(events, key = { it.id }) { event ->
-                        PickEventRow(
-                            event = event,
-                            types = types,
-                            onClick = { onPickEvent(event.id) },
-                        )
-                        HorizontalDivider()
-                    }
                     item {
                         Text(
-                            text = "Start new event",
+                            text = "Add new",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
@@ -72,6 +64,15 @@ fun PickEventForEntryDialog(
                                 .clickable(onClick = onStartNewEvent)
                                 .padding(vertical = 14.dp),
                         )
+                        HorizontalDivider()
+                    }
+                    items(events, key = { it.id }) { event ->
+                        PickEventRow(
+                            event = event,
+                            types = types,
+                            onClick = { onPickEvent(event.id) },
+                        )
+                        HorizontalDivider()
                     }
                 }
             }
