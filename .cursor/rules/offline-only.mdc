@@ -1,0 +1,30 @@
+---
+description: Mai Monthly Hoppinings must stay 100% offline while in use
+alwaysApply: true
+---
+
+# Offline-only app
+
+This app is a **personal, on-device tracker**. While it is in use it must **never connect to the internet**. There are no accounts, sync, ads, analytics, crash reporting, remote config, or cloud backup.
+
+Treat this as a hard product constraint on **every** future request. If a request implies a network call, implement the local-only version or refuse the network part. Do not add “just a small” online dependency.
+
+## Do not add
+
+- `INTERNET`, `ACCESS_NETWORK_STATE`, or any other network permission
+- HTTP/WebSocket clients, download managers, or “check for updates” in-app
+- Firebase, Play services telemetry, ads, auth, or third-party SDKs that phone home
+- Hidden connectivity (license checks, font/icon CDNs, map tiles, weather, AI APIs)
+
+```xml
+<!-- BAD: never add this -->
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+## Keep data on device
+
+- Room + DataStore only for app state
+- Backup is user-driven local files (SAF export/import), not a server
+- No URLs, Retrofit/OkHttp/Ktor, WorkManager network workers, or `HttpURLConnection`
+
+Gradle fetch during **development** (dependencies) is fine. The **installed app** must work with airplane mode on and no network permission in the manifest.

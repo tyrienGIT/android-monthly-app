@@ -6,6 +6,7 @@ import com.maimonthlyhoppinings.data.BackupRepository
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.SavedThemeRepository
 import com.maimonthlyhoppinings.data.ThemePreferences
+import kotlinx.coroutines.runBlocking
 
 class MaiMonthlyHoppiningsApp : Application() {
     lateinit var eventRepository: EventRepository
@@ -30,6 +31,7 @@ class MaiMonthlyHoppiningsApp : Application() {
         )
         savedThemeRepository = SavedThemeRepository(database.savedColorThemeDao())
         themePreferences = ThemePreferences(this)
+        runBlocking { themePreferences.applyStoredNightMode() }
         backupRepository = BackupRepository(
             database = database,
             eventTypeDao = database.eventTypeDao(),

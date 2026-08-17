@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Coastal dark background; used for the pre-Compose splash. -->
+    <color name="splash_background">#101716</color>
+</resources>
