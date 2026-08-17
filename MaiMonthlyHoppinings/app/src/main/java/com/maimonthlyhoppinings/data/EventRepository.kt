@@ -192,6 +192,10 @@ class EventRepository(
         trackedEventDao.deleteById(id)
     }
 
+    suspend fun deleteAllEvents() {
+        trackedEventDao.deleteAll()
+    }
+
     suspend fun addEntry(input: EntryInput): Long {
         validateEntry(input)
         require(trackedEventDao.getById(input.eventId) != null) { "Event not found" }
