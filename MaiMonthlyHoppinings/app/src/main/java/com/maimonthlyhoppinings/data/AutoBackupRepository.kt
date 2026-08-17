@@ -11,7 +11,7 @@ class AutoBackupRepository(
     private val context: Context,
     private val backupRepository: BackupRepository,
     private val appPreferences: AppPreferences,
-    private val bookManager: BookManager,
+    private val personaManager: PersonaManager,
 ) {
     private val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
 
@@ -51,7 +51,7 @@ class AutoBackupRepository(
         val json = backupRepository.export()
         val stamp = LocalDate.now().format(dateFormat) +
             "-" + LocalTime.now().format(DateTimeFormatter.ofPattern("HHmmss"))
-        val slug = bookManager.activeBook.value.fileSlug()
+        val slug = personaManager.activePersona.value.fileSlug()
         val name = "mai-auto-$stamp-$slug.json"
         val target = File(backupDir, name)
         val temp = File(backupDir, "$name.tmp")

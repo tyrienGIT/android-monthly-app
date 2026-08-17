@@ -63,7 +63,7 @@ object TutorialTargetIds {
     const val ENTRY_DAY = "entry_day"
 
     const val SETTINGS_PREFS = "settings_prefs"
-    const val SETTINGS_BOOKS = "settings_books"
+    const val SETTINGS_PERSONAS = "settings_personas"
     const val SETTINGS_CATEGORIES = "settings_categories"
     const val SETTINGS_DATA = "settings_data"
     const val SETTINGS_FEEDBACK = "settings_feedback"
@@ -80,7 +80,7 @@ object TutorialSteps {
             screen = TutorialScreen.Home,
             targetId = TutorialTargetIds.HOME_WELCOME,
             title = "Just for you, on this phone",
-            body = "Nothing is uploaded. The title is your current book — tap it to add another journal. An event is a category and a stretch of days.",
+            body = "Nothing is uploaded. The title is your current persona — tap it to add another journal. An event is a category and a stretch of days.",
         ),
         TutorialStep(
             id = "full_home_fab",
@@ -129,7 +129,7 @@ object TutorialSteps {
             screen = TutorialScreen.Settings,
             targetId = TutorialTargetIds.SETTINGS_PREFS,
             title = "Make it yours",
-            body = "Books keep separate journals. Categories and backup belong to the book that’s open.",
+            body = "Personas keep separate journals. Categories and backup belong to the persona that’s open.",
         ),
     )
 
@@ -139,7 +139,7 @@ object TutorialSteps {
             screen = TutorialScreen.Home,
             targetId = TutorialTargetIds.HOME_WELCOME,
             title = "Just for you, on this phone",
-            body = "Home lists this book’s events. Tap the title to switch or add another book.",
+            body = "Home lists this persona’s events. Tap the title to switch or add another persona.",
         ),
         TutorialStep(
             id = "home_fab",
@@ -300,18 +300,18 @@ object TutorialSteps {
 
     val settings: List<TutorialStep> = listOf(
         TutorialStep(
-            id = "settings_books",
+            id = "settings_personas",
             screen = TutorialScreen.Settings,
-            targetId = TutorialTargetIds.SETTINGS_BOOKS,
-            title = "Books",
-            body = "Add another journal if you want a separate set of events. Your first book is already here.",
+            targetId = TutorialTargetIds.SETTINGS_PERSONAS,
+            title = "Personas",
+            body = "Add another journal if you want a separate set of events. Your first persona is already here.",
         ),
         TutorialStep(
             id = "settings_categories",
             screen = TutorialScreen.Settings,
             targetId = TutorialTargetIds.SETTINGS_CATEGORIES,
             title = "Categories",
-            body = "Rename types and change their colours for this book. Appearance is here too.",
+            body = "Rename types and change their colours for this persona. Appearance is here too.",
         ),
         TutorialStep(
             id = "settings_data",
@@ -349,7 +349,7 @@ object TutorialSteps {
             screen = TutorialScreen.Data,
             targetId = TutorialTargetIds.DATA_MERGE_REPLACE,
             title = "Merge or replace",
-            body = "Merge keeps this book and updates matching IDs. Replace all throws away anything in this book that is not in the file.",
+            body = "Merge keeps this persona and updates matching IDs. Replace all throws away anything in this persona that is not in the file.",
         ),
     )
 

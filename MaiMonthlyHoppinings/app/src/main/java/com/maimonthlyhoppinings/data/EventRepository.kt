@@ -29,17 +29,17 @@ data class EntryInput(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventRepository(
-    private val books: BookManager,
+    private val personas: PersonaManager,
 ) {
     private val trackedEventDao: TrackedEventDao
-        get() = books.database.trackedEventDao()
+        get() = personas.database.trackedEventDao()
     private val eventEntryDao: EventEntryDao
-        get() = books.database.eventEntryDao()
+        get() = personas.database.eventEntryDao()
     private val eventTypeDao: EventTypeDao
-        get() = books.database.eventTypeDao()
+        get() = personas.database.eventTypeDao()
 
     fun observeTypes(): Flow<List<EventTypeEntity>> {
-        return books.databaseFlow.flatMapLatest { it.eventTypeDao().observeAll() }
+        return personas.databaseFlow.flatMapLatest { it.eventTypeDao().observeAll() }
     }
 
     suspend fun getTypes(): List<EventTypeEntity> = eventTypeDao.getAll()
@@ -86,15 +86,15 @@ class EventRepository(
     }
 
     fun observeEventsWithEntries(): Flow<List<EventWithEntries>> {
-        return books.databaseFlow.flatMapLatest { it.trackedEventDao().observeAllWithEntries() }
+        return personas.databaseFlow.flatMapLatest { it.trackedEventDao().observeAllWithEntries() }
     }
 
     fun observeEvents(): Flow<List<TrackedEvent>> {
-        return books.databaseFlow.flatMapLatest { it.trackedEventDao().observeAll() }
+        return personas.databaseFlow.flatMapLatest { it.trackedEventDao().observeAll() }
     }
 
     fun observeEvent(eventId: Long): Flow<EventWithEntries?> {
-        return books.databaseFlow.flatMapLatest { it.trackedEventDao().observeWithEntries(eventId) }
+        return personas.databaseFlow.flatMapLatest { it.trackedEventDao().observeWithEntries(eventId) }
     }
 
     suspend fun getEvent(eventId: Long): EventWithEntries? {
@@ -102,19 +102,19 @@ class EventRepository(
     }
 
     fun observeEntriesForDay(date: LocalDate): Flow<List<EntryWithEvent>> {
-        return books.databaseFlow.flatMapLatest {
+        return personas.databaseFlow.flatMapLatest {
             it.eventEntryDao().observeEntriesForDay(date.toEpochDay())
         }
     }
 
     fun observeEntriesInRange(startDate: LocalDate, endDate: LocalDate): Flow<List<EntryWithEvent>> {
-        return books.databaseFlow.flatMapLatest {
+        return personas.databaseFlow.flatMapLatest {
             it.eventEntryDao().observeEntriesInRange(startDate.toEpochDay(), endDate.toEpochDay())
         }
     }
 
     fun observeEventsForDay(date: LocalDate): Flow<List<TrackedEvent>> {
-        return books.databaseFlow.flatMapLatest {
+        return personas.databaseFlow.flatMapLatest {
             it.trackedEventDao().observeOverlappingDay(date.toEpochDay())
         }
     }
@@ -135,7 +135,7 @@ class EventRepository(
     ): Flow<Map<Long, List<DayHeatSegment>>> {
         val start = startDate.toEpochDay()
         val end = endDate.toEpochDay()
-        return books.databaseFlow.flatMapLatest { db ->
+        return personas.databaseFlow.flatMapLatest { db ->
             combine(
                 db.trackedEventDao().observeOverlappingRange(start, end),
                 db.eventEntryDao().observeEntriesForEventsOverlappingRange(start, end),

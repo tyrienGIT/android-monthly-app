@@ -24,7 +24,7 @@ import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsHomeScreen(
-    onOpenBooks: () -> Unit,
+    onOpenPersonas: () -> Unit,
     onOpenAppearance: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenData: () -> Unit,
@@ -60,10 +60,10 @@ fun SettingsHomeScreen(
             item {
                 Column(modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_PREFS)) {
                     SettingsNavRow(
-                        title = "Books",
+                        title = "Personas",
                         subtitle = "Separate journals on this phone",
-                        onClick = onOpenBooks,
-                        modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_BOOKS),
+                        onClick = onOpenPersonas,
+                        modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_PERSONAS),
                     )
                     SettingsNavRow(
                         title = "Appearance",
@@ -72,13 +72,13 @@ fun SettingsHomeScreen(
                     )
                     SettingsNavRow(
                         title = "Categories",
-                        subtitle = "Names and colours for this book",
+                        subtitle = "Names and colours for this persona",
                         onClick = onOpenCategories,
                         modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_CATEGORIES),
                     )
                     SettingsNavRow(
                         title = "Data",
-                        subtitle = "Export and import this book’s JSON backup",
+                        subtitle = "Export and import this persona’s JSON backup",
                         onClick = onOpenData,
                         modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_DATA),
                     )

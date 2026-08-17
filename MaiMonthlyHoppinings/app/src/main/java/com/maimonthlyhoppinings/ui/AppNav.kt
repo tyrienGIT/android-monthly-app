@@ -23,8 +23,8 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.maimonthlyhoppinings.MaiMonthlyHoppiningsApp
-import com.maimonthlyhoppinings.ui.book.BookViewModel
-import com.maimonthlyhoppinings.ui.book.BooksScreen
+import com.maimonthlyhoppinings.ui.persona.PersonaViewModel
+import com.maimonthlyhoppinings.ui.persona.PersonasScreen
 import com.maimonthlyhoppinings.ui.calendar.CalendarScreen
 import com.maimonthlyhoppinings.ui.calendar.CalendarViewModel
 import com.maimonthlyhoppinings.ui.event.EntryEditorScreen
@@ -59,7 +59,7 @@ import java.time.LocalDate
 
 private object Routes {
     const val Home = "home"
-    const val Books = "books"
+    const val Personas = "personas"
     const val Calendar = "calendar"
     const val Trends = "trends"
     const val EventNew = "event/new?epochDay={epochDay}"
@@ -90,10 +90,10 @@ fun AppNav(
     val navController = rememberNavController()
     val app = LocalContext.current.applicationContext as MaiMonthlyHoppiningsApp
     val repository = app.eventRepository
-    val bookViewModel: BookViewModel = viewModel(
-        factory = BookViewModel.factory(app.bookManager),
+    val personaViewModel: PersonaViewModel = viewModel(
+        factory = PersonaViewModel.factory(app.personaManager),
     )
-    val booksState by bookViewModel.uiState.collectAsStateWithLifecycle()
+    val personasState by personaViewModel.uiState.collectAsStateWithLifecycle()
     val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
     val activeColorTheme by themeViewModel.activeColorTheme.collectAsStateWithLifecycle()
     val savedThemes by themeViewModel.savedThemes.collectAsStateWithLifecycle()
@@ -107,10 +107,10 @@ fun AppNav(
         tutorialViewModel.startFirstRunIfNeeded()
     }
 
-    var lastBookId by remember { mutableStateOf(booksState.active.id) }
-    LaunchedEffect(booksState.active.id) {
-        if (lastBookId == booksState.active.id) return@LaunchedEffect
-        lastBookId = booksState.active.id
+    var lastPersonaId by remember { mutableStateOf(personasState.active.id) }
+    LaunchedEffect(personasState.active.id) {
+        if (lastPersonaId == personasState.active.id) return@LaunchedEffect
+        lastPersonaId = personasState.active.id
         val route = navController.currentBackStackEntry?.destination?.route.orEmpty()
         if (route.startsWith("event") || route.startsWith("entry")) {
             navController.popBackStack(Routes.Home, inclusive = false)
@@ -156,9 +156,9 @@ fun AppNav(
             )
             HomeScreen(
                 viewModel = viewModel,
-                bookViewModel = bookViewModel,
+                personaViewModel = personaViewModel,
                 onOpenSettings = { navController.navigate(SettingsRoutes.Graph) },
-                onOpenBooks = { navController.navigate(Routes.Books) },
+                onOpenPersonas = { navController.navigate(Routes.Personas) },
                 onOpenCalendar = { navController.navigate(Routes.Calendar) },
                 onOpenTrends = { navController.navigate(Routes.Trends) },
                 onStartEvent = { navController.navigate(Routes.eventNew()) },
@@ -168,9 +168,9 @@ fun AppNav(
             )
         }
 
-        composable(Routes.Books) {
-            BooksScreen(
-                viewModel = bookViewModel,
+        composable(Routes.Personas) {
+            PersonasScreen(
+                viewModel = personaViewModel,
                 onBack = { navController.popBackStack() },
             )
         }
@@ -181,7 +181,7 @@ fun AppNav(
         ) {
             composable(SettingsRoutes.Root) {
                 SettingsHomeScreen(
-                    onOpenBooks = { navController.navigate(Routes.Books) },
+                    onOpenPersonas = { navController.navigate(Routes.Personas) },
                     onOpenAppearance = { navController.navigate(SettingsRoutes.Appearance) },
                     onOpenCategories = { navController.navigate(SettingsRoutes.Categories) },
                     onOpenData = { navController.navigate(SettingsRoutes.Data) },
@@ -259,7 +259,7 @@ fun AppNav(
                 )
                 DataSettingsScreen(
                     viewModel = backupViewModel,
-                    bookName = booksState.active.name,
+                    personaName = personasState.active.name,
                     onBack = { navController.popBackStack() },
                 )
             }

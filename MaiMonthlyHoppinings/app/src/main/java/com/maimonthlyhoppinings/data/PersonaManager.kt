@@ -15,30 +15,30 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 
-class BookManager(
+class PersonaManager(
     private val context: Context,
-    private val store: BookPreferences,
+    private val store: PersonaPreferences,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutex = Mutex()
-    private val session = MutableStateFlow<OpenBook?>(null)
+    private val session = MutableStateFlow<OpenPersona?>(null)
 
-    val catalog: StateFlow<BookCatalog> = store.catalog.stateIn(
+    val catalog: StateFlow<PersonaCatalog> = store.catalog.stateIn(
         scope = scope,
         started = SharingStarted.Eagerly,
-        initialValue = BookCatalog(books = listOf(Book.default()), activeId = Book.DEFAULT_ID),
+        initialValue = PersonaCatalog(personas = listOf(Persona.default()), activeId = Persona.DEFAULT_ID),
     )
 
-    val books: StateFlow<List<Book>> = catalog
-        .map { it.books }
-        .stateIn(scope, SharingStarted.Eagerly, catalog.value.books)
+    val personas: StateFlow<List<Persona>> = catalog
+        .map { it.personas }
+        .stateIn(scope, SharingStarted.Eagerly, catalog.value.personas)
 
-    val activeBook: StateFlow<Book> = catalog
+    val activePersona: StateFlow<Persona> = catalog
         .map { it.active }
         .stateIn(scope, SharingStarted.Eagerly, catalog.value.active)
 
     val database: AppDatabase
-        get() = session.value?.database ?: error("Books have not been started")
+        get() = session.value?.database ?: error("Personas have not been started")
 
     val databaseFlow = session
         .map { it?.database }
@@ -47,45 +47,45 @@ class BookManager(
 
     suspend fun start() {
         mutex.withLock {
-            store.ensureDefaultBook()
+            store.ensureDefaultPersona()
             openLocked(store.snapshot().active)
         }
     }
 
     suspend fun switchTo(id: String) {
         mutex.withLock {
-            val book = store.snapshot().book(id) ?: return
-            if (session.value?.book?.id == id) return
-            openLocked(book)
+            val persona = store.snapshot().persona(id) ?: return
+            if (session.value?.persona?.id == id) return
+            openLocked(persona)
             store.setActive(id)
         }
     }
 
-    suspend fun create(name: String): Book {
+    suspend fun create(name: String): Persona {
         return mutex.withLock {
             val catalog = store.snapshot()
-            val resolvedName = Book.sanitizeName(
+            val resolvedName = Persona.sanitizeName(
                 name,
-                fallback = nextUntitledName(catalog.books),
+                fallback = nextUntitledName(catalog.personas),
             )
             val id = UUID.randomUUID().toString()
-            val book = Book(
+            val persona = Persona(
                 id = id,
                 name = resolvedName,
                 databaseName = "mai_book_${id.replace("-", "")}.db",
                 createdAtMillis = System.currentTimeMillis(),
             )
-            store.upsert(book)
-            openLocked(book)
-            store.setActive(book.id)
-            book
+            store.upsert(persona)
+            openLocked(persona)
+            store.setActive(persona.id)
+            persona
         }
     }
 
     suspend fun rename(id: String, name: String) {
         mutex.withLock {
-            val existing = store.snapshot().book(id) ?: return
-            val resolved = Book.sanitizeName(name, fallback = existing.name)
+            val existing = store.snapshot().persona(id) ?: return
+            val resolved = Persona.sanitizeName(name, fallback = existing.name)
             store.upsert(existing.copy(name = resolved))
         }
     }
@@ -93,11 +93,11 @@ class BookManager(
     suspend fun delete(id: String) {
         mutex.withLock {
             val catalog = store.snapshot()
-            if (catalog.books.size <= 1) return
-            val doomed = catalog.book(id) ?: return
-            val remaining = catalog.books.filterNot { it.id == id }
+            if (catalog.personas.size <= 1) return
+            val doomed = catalog.persona(id) ?: return
+            val remaining = catalog.personas.filterNot { it.id == id }
             val nextActive = if (catalog.activeId == id) remaining.first() else catalog.active
-            if (session.value?.book?.id == id) {
+            if (session.value?.persona?.id == id) {
                 openLocked(nextActive)
             }
             store.remove(id)
@@ -107,26 +107,26 @@ class BookManager(
         }
     }
 
-    private fun openLocked(book: Book) {
+    private fun openLocked(persona: Persona) {
         val previous = session.value
-        val database = AppDatabase.open(context, book.databaseName)
-        session.value = OpenBook(book, database)
-        if (previous != null && previous.book.databaseName != book.databaseName) {
-            AppDatabase.release(previous.book.databaseName)
+        val database = AppDatabase.open(context, persona.databaseName)
+        session.value = OpenPersona(persona, database)
+        if (previous != null && previous.persona.databaseName != persona.databaseName) {
+            AppDatabase.release(previous.persona.databaseName)
         }
     }
 
-    private fun nextUntitledName(existing: List<Book>): String {
+    private fun nextUntitledName(existing: List<Persona>): String {
         val used = existing.map { it.name }.toSet()
         var index = existing.size + 1
-        while (used.contains("Book $index")) {
+        while (used.contains("Persona $index")) {
             index += 1
         }
-        return "Book $index"
+        return "Persona $index"
     }
 
-    private data class OpenBook(
-        val book: Book,
+    private data class OpenPersona(
+        val persona: Persona,
         val database: AppDatabase,
     )
 }

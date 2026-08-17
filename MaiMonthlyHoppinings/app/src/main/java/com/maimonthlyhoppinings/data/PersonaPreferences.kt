@@ -12,33 +12,34 @@ import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 
+/** Same on-disk store as the old book catalog so existing installs keep their journals. */
 private val Context.bookDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "book_preferences",
 )
 
-class BookPreferences(
+class PersonaPreferences(
     private val context: Context,
 ) {
     private val booksJsonKey = stringPreferencesKey("books_json")
     private val activeIdKey = stringPreferencesKey("active_book_id")
 
-    val catalog: Flow<BookCatalog> = context.bookDataStore.data.map { prefs ->
+    val catalog: Flow<PersonaCatalog> = context.bookDataStore.data.map { prefs ->
         parse(prefs[booksJsonKey], prefs[activeIdKey])
     }
 
-    suspend fun snapshot(): BookCatalog = catalog.first()
+    suspend fun snapshot(): PersonaCatalog = catalog.first()
 
-    suspend fun ensureDefaultBook() {
+    suspend fun ensureDefaultPersona() {
         context.bookDataStore.edit { prefs ->
             val current = parse(prefs[booksJsonKey], prefs[activeIdKey])
-            if (current.books.isEmpty()) {
-                val default = Book.default()
+            if (current.personas.isEmpty()) {
+                val default = Persona.default()
                 prefs[booksJsonKey] = encode(listOf(default))
                 prefs[activeIdKey] = default.id
                 return@edit
             }
-            if (current.books.none { it.id == current.activeId }) {
-                prefs[activeIdKey] = current.books.first().id
+            if (current.personas.none { it.id == current.activeId }) {
+                prefs[activeIdKey] = current.personas.first().id
             }
         }
     }
@@ -46,19 +47,19 @@ class BookPreferences(
     suspend fun setActive(id: String) {
         context.bookDataStore.edit { prefs ->
             val current = parse(prefs[booksJsonKey], prefs[activeIdKey])
-            if (current.book(id) != null) {
+            if (current.persona(id) != null) {
                 prefs[activeIdKey] = id
             }
         }
     }
 
-    suspend fun upsert(book: Book) {
+    suspend fun upsert(persona: Persona) {
         context.bookDataStore.edit { prefs ->
             val current = parse(prefs[booksJsonKey], prefs[activeIdKey])
-            val next = current.books.filterNot { it.id == book.id } + book
+            val next = current.personas.filterNot { it.id == persona.id } + persona
             prefs[booksJsonKey] = encode(next.sortedBy { it.createdAtMillis })
-            if (current.books.none { it.id == current.activeId }) {
-                prefs[activeIdKey] = book.id
+            if (current.personas.none { it.id == current.activeId }) {
+                prefs[activeIdKey] = persona.id
             }
         }
     }
@@ -66,7 +67,7 @@ class BookPreferences(
     suspend fun remove(id: String) {
         context.bookDataStore.edit { prefs ->
             val current = parse(prefs[booksJsonKey], prefs[activeIdKey])
-            val next = current.books.filterNot { it.id == id }
+            val next = current.personas.filterNot { it.id == id }
             if (next.isEmpty()) return@edit
             prefs[booksJsonKey] = encode(next)
             if (current.activeId == id) {
@@ -75,31 +76,31 @@ class BookPreferences(
         }
     }
 
-    private fun parse(json: String?, activeId: String?): BookCatalog {
-        val books = decode(json)
+    private fun parse(json: String?, activeId: String?): PersonaCatalog {
+        val personas = decode(json)
         val resolvedActive = when {
-            activeId != null && books.any { it.id == activeId } -> activeId
-            books.isNotEmpty() -> books.first().id
-            else -> Book.DEFAULT_ID
+            activeId != null && personas.any { it.id == activeId } -> activeId
+            personas.isNotEmpty() -> personas.first().id
+            else -> Persona.DEFAULT_ID
         }
-        return BookCatalog(books = books, activeId = resolvedActive)
+        return PersonaCatalog(personas = personas, activeId = resolvedActive)
     }
 
-    private fun encode(books: List<Book>): String {
+    private fun encode(personas: List<Persona>): String {
         val array = JSONArray()
-        books.forEach { book ->
+        personas.forEach { persona ->
             array.put(
                 JSONObject()
-                    .put("id", book.id)
-                    .put("name", book.name)
-                    .put("databaseName", book.databaseName)
-                    .put("createdAtMillis", book.createdAtMillis),
+                    .put("id", persona.id)
+                    .put("name", persona.name)
+                    .put("databaseName", persona.databaseName)
+                    .put("createdAtMillis", persona.createdAtMillis),
             )
         }
         return array.toString()
     }
 
-    private fun decode(json: String?): List<Book> {
+    private fun decode(json: String?): List<Persona> {
         if (json.isNullOrBlank()) return emptyList()
         return runCatching {
             val array = JSONArray(json)
@@ -107,7 +108,7 @@ class BookPreferences(
                 for (index in 0 until array.length()) {
                     val obj = array.getJSONObject(index)
                     add(
-                        Book(
+                        Persona(
                             id = obj.getString("id"),
                             name = obj.getString("name"),
                             databaseName = obj.getString("databaseName"),

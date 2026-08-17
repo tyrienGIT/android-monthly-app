@@ -55,9 +55,9 @@ import com.maimonthlyhoppinings.data.latestEntry
 import com.maimonthlyhoppinings.data.shortDateLabel
 import com.maimonthlyhoppinings.data.shortDateRangeLabel
 import com.maimonthlyhoppinings.ui.ConfirmDeleteDialog
-import com.maimonthlyhoppinings.ui.book.BookNameDialog
-import com.maimonthlyhoppinings.ui.book.BookPickerDialog
-import com.maimonthlyhoppinings.ui.book.BookViewModel
+import com.maimonthlyhoppinings.ui.persona.PersonaNameDialog
+import com.maimonthlyhoppinings.ui.persona.PersonaPickerDialog
+import com.maimonthlyhoppinings.ui.persona.PersonaViewModel
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
 import com.maimonthlyhoppinings.ui.tutorial.TutorialHelpAction
 import com.maimonthlyhoppinings.ui.tutorial.TutorialSection
@@ -68,49 +68,49 @@ import com.maimonthlyhoppinings.ui.tutorial.tutorialTarget
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    bookViewModel: BookViewModel,
+    personaViewModel: PersonaViewModel,
     onOpenSettings: () -> Unit,
-    onOpenBooks: () -> Unit,
+    onOpenPersonas: () -> Unit,
     onOpenCalendar: () -> Unit,
     onOpenTrends: () -> Unit,
     onStartEvent: () -> Unit,
     onOpenEvent: (Long) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val books by bookViewModel.uiState.collectAsStateWithLifecycle()
+    val personas by personaViewModel.uiState.collectAsStateWithLifecycle()
     var pendingDelete by remember { mutableStateOf<EventWithEntries?>(null) }
-    var showBookPicker by remember { mutableStateOf(false) }
-    var showNewBook by remember { mutableStateOf(false) }
+    var showPersonaPicker by remember { mutableStateOf(false) }
+    var showNewPersona by remember { mutableStateOf(false) }
 
-    if (showBookPicker) {
-        BookPickerDialog(
-            books = books.books,
-            activeId = books.active.id,
+    if (showPersonaPicker) {
+        PersonaPickerDialog(
+            personas = personas.personas,
+            activeId = personas.active.id,
             onSelect = { id ->
-                bookViewModel.switchTo(id)
-                showBookPicker = false
+                personaViewModel.switchTo(id)
+                showPersonaPicker = false
             },
             onCreate = {
-                showBookPicker = false
-                showNewBook = true
+                showPersonaPicker = false
+                showNewPersona = true
             },
             onManage = {
-                showBookPicker = false
-                onOpenBooks()
+                showPersonaPicker = false
+                onOpenPersonas()
             },
-            onDismiss = { showBookPicker = false },
+            onDismiss = { showPersonaPicker = false },
         )
     }
-    if (showNewBook) {
-        BookNameDialog(
-            title = "New book",
+    if (showNewPersona) {
+        PersonaNameDialog(
+            title = "New persona",
             initialName = "",
             confirmLabel = "Create",
             onConfirm = { name ->
-                bookViewModel.create(name)
-                showNewBook = false
+                personaViewModel.create(name)
+                showNewPersona = false
             },
-            onDismiss = { showNewBook = false },
+            onDismiss = { showNewPersona = false },
         )
     }
 
@@ -133,12 +133,12 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .tutorialTarget(TutorialTargetIds.HOME_WELCOME)
-                            .clickable { showBookPicker = true }
+                            .clickable { showPersonaPicker = true }
                             .padding(end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = books.active.name,
+                            text = personas.active.name,
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
@@ -146,7 +146,7 @@ fun HomeScreen(
                         )
                         Icon(
                             imageVector = Icons.Filled.KeyboardArrowDown,
-                            contentDescription = "Switch book",
+                            contentDescription = "Switch persona",
                         )
                     }
                 },

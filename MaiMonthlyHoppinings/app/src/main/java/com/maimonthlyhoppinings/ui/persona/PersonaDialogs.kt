@@ -1,4 +1,4 @@
-package com.maimonthlyhoppinings.ui.book
+package com.maimonthlyhoppinings.ui.persona
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -29,11 +29,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.maimonthlyhoppinings.data.Book
+import com.maimonthlyhoppinings.data.Persona
 
 @Composable
-fun BookPickerDialog(
-    books: List<Book>,
+fun PersonaPickerDialog(
+    personas: List<Persona>,
     activeId: String,
     onSelect: (String) -> Unit,
     onCreate: () -> Unit,
@@ -42,7 +42,7 @@ fun BookPickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Books") },
+        title = { Text("Personas") },
         text = {
             Column(
                 modifier = Modifier
@@ -51,34 +51,34 @@ fun BookPickerDialog(
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = "Each book is its own journal — events, categories, and calendar stay separate.",
+                    text = "Each persona is its own journal — events, categories, and calendar stay separate.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
-                books.forEach { book ->
+                personas.forEach { persona ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelect(book.id) }
+                            .clickable { onSelect(persona.id) }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
-                            selected = book.id == activeId,
-                            onClick = { onSelect(book.id) },
+                            selected = persona.id == activeId,
+                            onClick = { onSelect(persona.id) },
                         )
                         Column(modifier = Modifier.padding(start = 4.dp)) {
                             Text(
-                                text = book.name,
+                                text = persona.name,
                                 style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = if (book.id == activeId) {
+                                fontWeight = if (persona.id == activeId) {
                                     FontWeight.SemiBold
                                 } else {
                                     FontWeight.Normal
                                 },
                             )
-                            if (book.isDefault) {
+                            if (persona.isDefault) {
                                 Text(
                                     text = "Default",
                                     style = MaterialTheme.typography.bodySmall,
@@ -92,7 +92,7 @@ fun BookPickerDialog(
         },
         confirmButton = {
             TextButton(onClick = onCreate) {
-                Text("New book")
+                Text("New persona")
             }
         },
         dismissButton = {
@@ -104,7 +104,7 @@ fun BookPickerDialog(
 }
 
 @Composable
-fun BookNameDialog(
+fun PersonaNameDialog(
     title: String,
     initialName: String,
     confirmLabel: String,
@@ -122,7 +122,7 @@ fun BookNameDialog(
         text = {
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it.take(Book.NAME_MAX_LENGTH) },
+                onValueChange = { name = it.take(Persona.NAME_MAX_LENGTH) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester),

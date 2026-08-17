@@ -49,11 +49,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private fun backupFileName(bookName: String): String {
-    val slug = bookName.lowercase()
+private fun backupFileName(personaName: String): String {
+    val slug = personaName.lowercase()
         .replace(Regex("[^a-z0-9]+"), "-")
         .trim('-')
-        .ifEmpty { "book" }
+        .ifEmpty { "persona" }
     return "$slug-backup.json"
 }
 
@@ -85,7 +85,7 @@ private sealed interface NumberPrompt {
 @Composable
 fun DataSettingsScreen(
     viewModel: DataBackupViewModel,
-    bookName: String,
+    personaName: String,
     onBack: () -> Unit,
 ) {
     val autoBackup by viewModel.autoBackup.collectAsStateWithLifecycle()
@@ -176,12 +176,12 @@ fun DataSettingsScreen(
                     SettingsSectionHeader("Backup")
                     SettingsNavRow(
                         title = "Export",
-                        subtitle = "Save a JSON backup of this book’s events, types, and themes",
+                        subtitle = "Save a JSON backup of this persona’s events, types, and themes",
                         onClick = {
                             scope.launch {
                                 try {
                                     pendingExportJson = viewModel.export()
-                                    createDocument.launch(backupFileName(bookName))
+                                    createDocument.launch(backupFileName(personaName))
                                 } catch (e: Exception) {
                                     prompt = BackupPrompt.Message(e.message ?: "Export failed")
                                 }
@@ -350,8 +350,8 @@ fun DataSettingsScreen(
                 title = { Text("Import backup") },
                 text = {
                     Text(
-                        "This only changes the open book. Merge keeps its items and updates " +
-                            "matching IDs. Replace all deletes items in this book that are not in the file.",
+                        "This only changes the open persona. Merge keeps its items and updates " +
+                            "matching IDs. Replace all deletes items in this persona that are not in the file.",
                     )
                 },
                 confirmButton = {
@@ -373,11 +373,11 @@ fun DataSettingsScreen(
         is BackupPrompt.ConfirmReplace -> {
             AlertDialog(
                 onDismissRequest = { prompt = BackupPrompt.Hidden },
-                title = { Text("Replace this book?") },
+                title = { Text("Replace this persona?") },
                 text = {
                     Text(
-                        "Events, entries, types, and custom themes in this book that are not " +
-                            "in this backup will be deleted. Other books are left alone. This can't be undone.",
+                        "Events, entries, types, and custom themes in this persona that are not " +
+                            "in this backup will be deleted. Other personas are left alone. This can't be undone.",
                     )
                 },
                 confirmButton = {

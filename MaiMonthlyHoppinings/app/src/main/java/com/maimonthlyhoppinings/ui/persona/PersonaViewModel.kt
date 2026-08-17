@@ -1,71 +1,71 @@
-package com.maimonthlyhoppinings.ui.book
+package com.maimonthlyhoppinings.ui.persona
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.maimonthlyhoppinings.data.Book
-import com.maimonthlyhoppinings.data.BookManager
+import com.maimonthlyhoppinings.data.Persona
+import com.maimonthlyhoppinings.data.PersonaManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class BooksUiState(
-    val books: List<Book> = listOf(Book.default()),
-    val active: Book = Book.default(),
+data class PersonasUiState(
+    val personas: List<Persona> = listOf(Persona.default()),
+    val active: Persona = Persona.default(),
 ) {
     val canDelete: Boolean
-        get() = books.size > 1
+        get() = personas.size > 1
 }
 
-class BookViewModel(
-    private val bookManager: BookManager,
+class PersonaViewModel(
+    private val personaManager: PersonaManager,
 ) : ViewModel() {
-    val uiState: StateFlow<BooksUiState> = combine(
-        bookManager.books,
-        bookManager.activeBook,
-    ) { books, active ->
-        BooksUiState(books = books, active = active)
+    val uiState: StateFlow<PersonasUiState> = combine(
+        personaManager.personas,
+        personaManager.activePersona,
+    ) { personas, active ->
+        PersonasUiState(personas = personas, active = active)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = BooksUiState(
-            books = bookManager.books.value,
-            active = bookManager.activeBook.value,
+        initialValue = PersonasUiState(
+            personas = personaManager.personas.value,
+            active = personaManager.activePersona.value,
         ),
     )
 
     fun switchTo(id: String) {
         viewModelScope.launch {
-            bookManager.switchTo(id)
+            personaManager.switchTo(id)
         }
     }
 
     fun create(name: String) {
         viewModelScope.launch {
-            bookManager.create(name)
+            personaManager.create(name)
         }
     }
 
     fun rename(id: String, name: String) {
         viewModelScope.launch {
-            bookManager.rename(id, name)
+            personaManager.rename(id, name)
         }
     }
 
     fun delete(id: String) {
         viewModelScope.launch {
-            bookManager.delete(id)
+            personaManager.delete(id)
         }
     }
 
     companion object {
-        fun factory(bookManager: BookManager): ViewModelProvider.Factory {
+        fun factory(personaManager: PersonaManager): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return BookViewModel(bookManager) as T
+                    return PersonaViewModel(personaManager) as T
                 }
             }
         }

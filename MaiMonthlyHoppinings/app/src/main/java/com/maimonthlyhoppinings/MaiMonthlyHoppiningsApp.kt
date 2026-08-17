@@ -4,15 +4,15 @@ import android.app.Application
 import com.maimonthlyhoppinings.data.AppPreferences
 import com.maimonthlyhoppinings.data.AutoBackupRepository
 import com.maimonthlyhoppinings.data.BackupRepository
-import com.maimonthlyhoppinings.data.BookManager
-import com.maimonthlyhoppinings.data.BookPreferences
+import com.maimonthlyhoppinings.data.PersonaManager
+import com.maimonthlyhoppinings.data.PersonaPreferences
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.SavedThemeRepository
 import com.maimonthlyhoppinings.data.ThemePreferences
 import kotlinx.coroutines.runBlocking
 
 open class MaiMonthlyHoppiningsApp : Application() {
-    lateinit var bookManager: BookManager
+    lateinit var personaManager: PersonaManager
         private set
 
     lateinit var eventRepository: EventRepository
@@ -37,22 +37,22 @@ open class MaiMonthlyHoppiningsApp : Application() {
         super.onCreate()
         themePreferences = ThemePreferences(this)
         appPreferences = AppPreferences(this)
-        bookManager = BookManager(this, BookPreferences(this))
+        personaManager = PersonaManager(this, PersonaPreferences(this))
         runBlocking {
             themePreferences.applyStoredNightMode()
-            bookManager.start()
+            personaManager.start()
         }
-        eventRepository = EventRepository(bookManager)
-        savedThemeRepository = SavedThemeRepository(bookManager)
+        eventRepository = EventRepository(personaManager)
+        savedThemeRepository = SavedThemeRepository(personaManager)
         backupRepository = BackupRepository(
-            books = bookManager,
+            personas = personaManager,
             themePreferences = themePreferences,
         )
         autoBackupRepository = AutoBackupRepository(
             context = this,
             backupRepository = backupRepository,
             appPreferences = appPreferences,
-            bookManager = bookManager,
+            personaManager = personaManager,
         )
     }
 }

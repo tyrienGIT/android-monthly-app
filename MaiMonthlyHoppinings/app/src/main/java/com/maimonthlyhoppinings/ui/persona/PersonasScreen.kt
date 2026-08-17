@@ -1,4 +1,4 @@
-package com.maimonthlyhoppinings.ui.book
+package com.maimonthlyhoppinings.ui.persona
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -34,60 +34,60 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.maimonthlyhoppinings.data.Book
+import com.maimonthlyhoppinings.data.Persona
 import com.maimonthlyhoppinings.ui.ConfirmDeleteDialog
 
-private sealed interface BookPrompt {
-    data object Hidden : BookPrompt
-    data object Create : BookPrompt
-    data class Rename(val book: Book) : BookPrompt
-    data class Delete(val book: Book) : BookPrompt
+private sealed interface PersonaPrompt {
+    data object Hidden : PersonaPrompt
+    data object Create : PersonaPrompt
+    data class Rename(val persona: Persona) : PersonaPrompt
+    data class Delete(val persona: Persona) : PersonaPrompt
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BooksScreen(
-    viewModel: BookViewModel,
+fun PersonasScreen(
+    viewModel: PersonaViewModel,
     onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var prompt by remember { mutableStateOf<BookPrompt>(BookPrompt.Hidden) }
+    var prompt by remember { mutableStateOf<PersonaPrompt>(PersonaPrompt.Hidden) }
 
     when (val current = prompt) {
-        BookPrompt.Hidden -> Unit
-        BookPrompt.Create -> {
-            BookNameDialog(
-                title = "New book",
+        PersonaPrompt.Hidden -> Unit
+        PersonaPrompt.Create -> {
+            PersonaNameDialog(
+                title = "New persona",
                 initialName = "",
                 confirmLabel = "Create",
                 onConfirm = { name ->
                     viewModel.create(name)
-                    prompt = BookPrompt.Hidden
+                    prompt = PersonaPrompt.Hidden
                 },
-                onDismiss = { prompt = BookPrompt.Hidden },
+                onDismiss = { prompt = PersonaPrompt.Hidden },
             )
         }
-        is BookPrompt.Rename -> {
-            BookNameDialog(
-                title = "Rename book",
-                initialName = current.book.name,
+        is PersonaPrompt.Rename -> {
+            PersonaNameDialog(
+                title = "Rename persona",
+                initialName = current.persona.name,
                 confirmLabel = "Save",
                 onConfirm = { name ->
-                    viewModel.rename(current.book.id, name)
-                    prompt = BookPrompt.Hidden
+                    viewModel.rename(current.persona.id, name)
+                    prompt = PersonaPrompt.Hidden
                 },
-                onDismiss = { prompt = BookPrompt.Hidden },
+                onDismiss = { prompt = PersonaPrompt.Hidden },
             )
         }
-        is BookPrompt.Delete -> {
+        is PersonaPrompt.Delete -> {
             ConfirmDeleteDialog(
-                eventTitle = current.book.name,
-                entityLabel = "book",
+                eventTitle = current.persona.name,
+                entityLabel = "persona",
                 onConfirm = {
-                    viewModel.delete(current.book.id)
-                    prompt = BookPrompt.Hidden
+                    viewModel.delete(current.persona.id)
+                    prompt = PersonaPrompt.Hidden
                 },
-                onDismiss = { prompt = BookPrompt.Hidden },
+                onDismiss = { prompt = PersonaPrompt.Hidden },
             )
         }
     }
@@ -95,7 +95,7 @@ fun BooksScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Books") },
+                title = { Text("Personas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -108,13 +108,13 @@ fun BooksScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { prompt = BookPrompt.Create },
+                onClick = { prompt = PersonaPrompt.Create },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
-                    contentDescription = "New book",
+                    contentDescription = "New persona",
                 )
             }
         },
@@ -127,20 +127,20 @@ fun BooksScreen(
         ) {
             item {
                 Text(
-                    text = "Each book is a separate journal on this phone. Switching does not mix events.",
+                    text = "Each persona is a separate journal on this phone. Switching does not mix events.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
-            items(state.books, key = { it.id }) { book ->
-                BookRow(
-                    book = book,
-                    selected = book.id == state.active.id,
+            items(state.personas, key = { it.id }) { persona ->
+                PersonaRow(
+                    persona = persona,
+                    selected = persona.id == state.active.id,
                     canDelete = state.canDelete,
-                    onSelect = { viewModel.switchTo(book.id) },
-                    onRename = { prompt = BookPrompt.Rename(book) },
-                    onDelete = { prompt = BookPrompt.Delete(book) },
+                    onSelect = { viewModel.switchTo(persona.id) },
+                    onRename = { prompt = PersonaPrompt.Rename(persona) },
+                    onDelete = { prompt = PersonaPrompt.Delete(persona) },
                 )
             }
         }
@@ -148,8 +148,8 @@ fun BooksScreen(
 }
 
 @Composable
-private fun BookRow(
-    book: Book,
+private fun PersonaRow(
+    persona: Persona,
     selected: Boolean,
     canDelete: Boolean,
     onSelect: () -> Unit,
@@ -171,13 +171,13 @@ private fun BookRow(
                 .padding(end = 8.dp),
         ) {
             Text(
-                text = book.name,
+                text = persona.name,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             )
             Text(
                 text = buildString {
-                    if (book.isDefault) append("Default")
+                    if (persona.isDefault) append("Default")
                     if (selected) {
                         if (isNotEmpty()) append(" · ")
                         append("Open now")
@@ -191,7 +191,7 @@ private fun BookRow(
         IconButton(onClick = { menuOpen = true }) {
             Icon(
                 imageVector = Icons.Filled.MoreVert,
-                contentDescription = "Book options",
+                contentDescription = "Persona options",
             )
             DropdownMenu(
                 expanded = menuOpen,

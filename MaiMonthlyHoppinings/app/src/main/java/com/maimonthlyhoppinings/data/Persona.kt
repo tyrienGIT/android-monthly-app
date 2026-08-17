@@ -1,6 +1,6 @@
 package com.maimonthlyhoppinings.data
 
-data class Book(
+data class Persona(
     val id: String,
     val name: String,
     val databaseName: String,
@@ -14,7 +14,7 @@ data class Book(
             .replace(Regex("[^a-z0-9]+"), "-")
             .trim('-')
             .take(24)
-            .ifEmpty { "book" }
+            .ifEmpty { "persona" }
         return if (isDefault) fromName else "$fromName-${id.take(8)}"
     }
 
@@ -24,8 +24,8 @@ data class Book(
         const val DEFAULT_DATABASE = "mai_monthly_hoppinings.db"
         const val NAME_MAX_LENGTH = 40
 
-        fun default(createdAtMillis: Long = System.currentTimeMillis()): Book {
-            return Book(
+        fun default(createdAtMillis: Long = System.currentTimeMillis()): Persona {
+            return Persona(
                 id = DEFAULT_ID,
                 name = DEFAULT_NAME,
                 databaseName = DEFAULT_DATABASE,
@@ -33,18 +33,18 @@ data class Book(
             )
         }
 
-        fun sanitizeName(raw: String, fallback: String = "Untitled book"): String {
+        fun sanitizeName(raw: String, fallback: String = "Untitled persona"): String {
             return raw.trim().take(NAME_MAX_LENGTH).ifEmpty { fallback }
         }
     }
 }
 
-data class BookCatalog(
-    val books: List<Book>,
+data class PersonaCatalog(
+    val personas: List<Persona>,
     val activeId: String,
 ) {
-    val active: Book
-        get() = books.firstOrNull { it.id == activeId } ?: books.firstOrNull() ?: Book.default()
+    val active: Persona
+        get() = personas.firstOrNull { it.id == activeId } ?: personas.firstOrNull() ?: Persona.default()
 
-    fun book(id: String): Book? = books.firstOrNull { it.id == id }
+    fun persona(id: String): Persona? = personas.firstOrNull { it.id == id }
 }

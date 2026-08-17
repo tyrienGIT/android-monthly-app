@@ -4,11 +4,11 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.flow.first
 
 class BackupRepository(
-    private val books: BookManager,
+    private val personas: PersonaManager,
     private val themePreferences: ThemePreferences,
 ) {
     private val database: AppDatabase
-        get() = books.database
+        get() = personas.database
     private val eventTypeDao: EventTypeDao
         get() = database.eventTypeDao()
     private val trackedEventDao: TrackedEventDao
