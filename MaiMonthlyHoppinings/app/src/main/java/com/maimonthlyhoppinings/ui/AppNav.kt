@@ -40,6 +40,8 @@ import com.maimonthlyhoppinings.ui.settings.CategorySettingsViewModel
 import com.maimonthlyhoppinings.ui.settings.ColorThemeSettingsScreen
 import com.maimonthlyhoppinings.ui.settings.DataBackupViewModel
 import com.maimonthlyhoppinings.ui.settings.DataSettingsScreen
+import com.maimonthlyhoppinings.ui.settings.FeedbackScreen
+import com.maimonthlyhoppinings.ui.settings.FeedbackViewModel
 import com.maimonthlyhoppinings.ui.settings.LightDarkSettingsScreen
 import com.maimonthlyhoppinings.ui.settings.SettingsHomeScreen
 import com.maimonthlyhoppinings.ui.settings.SettingsRoutes
@@ -183,6 +185,7 @@ fun AppNav(
                     onOpenAppearance = { navController.navigate(SettingsRoutes.Appearance) },
                     onOpenCategories = { navController.navigate(SettingsRoutes.Categories) },
                     onOpenData = { navController.navigate(SettingsRoutes.Data) },
+                    onOpenFeedback = { navController.navigate(SettingsRoutes.Feedback) },
                     onReplayTutorial = {
                         navController.popBackStack(Routes.Home, inclusive = false)
                         tutorialViewModel.startFullTour()
@@ -257,6 +260,15 @@ fun AppNav(
                 DataSettingsScreen(
                     viewModel = backupViewModel,
                     bookName = booksState.active.name,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(SettingsRoutes.Feedback) {
+                val feedbackViewModel: FeedbackViewModel = viewModel(
+                    factory = FeedbackViewModel.factory(app),
+                )
+                FeedbackScreen(
+                    viewModel = feedbackViewModel,
                     onBack = { navController.popBackStack() },
                 )
             }

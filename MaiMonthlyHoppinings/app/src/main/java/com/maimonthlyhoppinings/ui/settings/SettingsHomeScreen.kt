@@ -28,6 +28,7 @@ fun SettingsHomeScreen(
     onOpenAppearance: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenData: () -> Unit,
+    onOpenFeedback: () -> Unit,
     onReplayTutorial: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -85,6 +86,12 @@ fun SettingsHomeScreen(
             }
             item { SettingsSectionHeader("Help") }
             item {
+                SettingsNavRow(
+                    title = "Feedback",
+                    subtitle = "Save markdown notes on this phone, then share when you want",
+                    onClick = onOpenFeedback,
+                    modifier = Modifier.tutorialTarget(TutorialTargetIds.SETTINGS_FEEDBACK),
+                )
                 SettingsNavRow(
                     title = "View tutorial",
                     subtitle = "Walk through Home, Calendar, and Trends on the real screens.",

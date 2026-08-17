@@ -66,6 +66,7 @@ object TutorialTargetIds {
     const val SETTINGS_BOOKS = "settings_books"
     const val SETTINGS_CATEGORIES = "settings_categories"
     const val SETTINGS_DATA = "settings_data"
+    const val SETTINGS_FEEDBACK = "settings_feedback"
     const val SETTINGS_VIEW_TUTORIAL = "settings_view_tutorial"
 
     const val DATA_LOCAL = "data_local"
@@ -318,6 +319,13 @@ object TutorialSteps {
             targetId = TutorialTargetIds.SETTINGS_DATA,
             title = "Your backup",
             body = "Export or import a JSON file. It stays on this device unless you share it.",
+        ),
+        TutorialStep(
+            id = "settings_feedback",
+            screen = TutorialScreen.Settings,
+            targetId = TutorialTargetIds.SETTINGS_FEEDBACK,
+            title = "Send a note",
+            body = "Save markdown notes on this phone, then Share to Messages, email, or copy.",
         ),
         TutorialStep(
             id = "settings_replay",

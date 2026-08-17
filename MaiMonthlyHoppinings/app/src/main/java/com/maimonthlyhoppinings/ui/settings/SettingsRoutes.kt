@@ -9,4 +9,5 @@ object SettingsRoutes {
     const val ThemeBuilder = "settings/theme_builder"
     const val Data = "settings/data"
     const val Categories = "settings/categories"
+    const val Feedback = "settings/feedback"
 }
