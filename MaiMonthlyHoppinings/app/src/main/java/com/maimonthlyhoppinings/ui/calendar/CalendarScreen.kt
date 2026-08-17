@@ -390,7 +390,7 @@ private fun SelectedDayEventGroup(
             ) {
                 visibleEntries.forEach { entry ->
                     SelectedDaySubEntryRow(
-                        entryTitle = entry.title.trim().ifEmpty { group.event.displayTitle(types) },
+                        entryTitle = entry.displayTitle(group.event, types),
                         entry = entry,
                         typeColor = typeColor,
                         onClick = { onEditEntry(entry.id) },

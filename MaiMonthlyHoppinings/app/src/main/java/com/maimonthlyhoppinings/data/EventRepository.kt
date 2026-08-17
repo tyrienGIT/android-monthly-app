@@ -12,6 +12,7 @@ data class EventInput(
     val title: String,
     val eventTypeId: String = EventType.defaultId,
     val details: String = "",
+    val emoji: String = "",
     val startDate: LocalDate,
     val endDate: LocalDate,
 )
@@ -19,6 +20,7 @@ data class EventInput(
 data class EntryInput(
     val eventId: Long,
     val title: String = "",
+    val emoji: String = "",
     val date: LocalDate,
     val startTime: LocalTime? = null,
     val details: String = "",
@@ -200,6 +202,7 @@ class EventRepository(
                 title = input.title.trim().ifEmpty { typeLabel(input.eventTypeId) },
                 eventTypeId = input.eventTypeId,
                 details = input.details.trim(),
+                emoji = EmojiTags.encode(EmojiTags.decode(input.emoji)),
                 startDateEpochDay = covered.first,
                 endDateEpochDay = covered.second,
             ),
@@ -304,6 +307,7 @@ class EventRepository(
             title = resolvedTitle,
             eventTypeId = eventTypeId,
             details = details.trim(),
+            emoji = EmojiTags.encode(EmojiTags.decode(emoji)),
             startDateEpochDay = startDate.toEpochDay(),
             endDateEpochDay = endDate.toEpochDay(),
         )
@@ -314,6 +318,7 @@ class EventRepository(
             id = id,
             eventId = eventId,
             title = title.trim(),
+            emoji = EmojiTags.encode(EmojiTags.decode(emoji)),
             dateEpochDay = date.toEpochDay(),
             startTimeMinutesOfDay = startTime?.let { it.hour * 60 + it.minute },
             details = details.trim(),

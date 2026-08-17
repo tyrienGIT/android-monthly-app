@@ -52,6 +52,7 @@ import com.maimonthlyhoppinings.data.EventTypeLookup
 import com.maimonthlyhoppinings.data.TrackedEvent
 import com.maimonthlyhoppinings.data.dateLabel
 import com.maimonthlyhoppinings.data.dateRangeLabel
+import com.maimonthlyhoppinings.data.EmojiTags
 import com.maimonthlyhoppinings.data.displayTitle
 import com.maimonthlyhoppinings.data.startTimeLabel
 import com.maimonthlyhoppinings.ui.ConfirmDeleteDialog
@@ -109,8 +110,8 @@ fun EventDetailScreen(
     pendingDeleteEntry?.let { entry ->
         val parent = state.eventWithEntries?.event
         ConfirmDeleteDialog(
-            eventTitle = parent?.let { entry.title.trim().ifEmpty { it.displayTitle(types) } }
-                ?: entry.dateLabel(),
+            eventTitle = parent?.let { entry.displayTitle(it, types) }
+                ?: EmojiTags.prefix(entry.emoji, entry.dateLabel()),
             entityLabel = "entry",
             onConfirm = {
                 currentViewModel.deleteEntry(entry.id)
@@ -376,7 +377,7 @@ private fun EntryRow(
                 Column(modifier = Modifier.weight(1f)) {
                     if (hasCustomTitle) {
                         Text(
-                            text = entry.title.trim().ifEmpty { parentEvent.displayTitle(types) },
+                            text = entry.displayTitle(parentEvent, types),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -388,7 +389,7 @@ private fun EntryRow(
                         )
                     } else {
                         Text(
-                            text = entry.dateLabel(),
+                            text = EmojiTags.prefix(entry.emoji, entry.dateLabel()),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )

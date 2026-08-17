@@ -44,12 +44,17 @@ fun TrackedEvent.shortDateRangeLabel(): String {
 }
 
 fun TrackedEvent.displayTitle(types: EventTypeLookup = EventTypeLookup(emptyList())): String {
-    return title.trim().ifEmpty { types.label(eventTypeId) }
+    val base = title.trim().ifEmpty { types.label(eventTypeId) }
+    return EmojiTags.prefix(emoji, base)
 }
 
 /** Entry title if set; otherwise falls back to the parent event title. */
-fun EventEntry.displayTitle(parent: TrackedEvent): String {
-    return title.trim().ifEmpty { parent.displayTitle() }
+fun EventEntry.displayTitle(
+    parent: TrackedEvent,
+    types: EventTypeLookup = EventTypeLookup(emptyList()),
+): String {
+    val base = title.trim().ifEmpty { parent.displayTitle(types) }
+    return EmojiTags.prefix(emoji, base)
 }
 
 fun EventWithEntries.entryCountLabel(): String {

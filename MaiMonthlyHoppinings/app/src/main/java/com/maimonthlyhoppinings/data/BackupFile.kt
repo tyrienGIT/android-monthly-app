@@ -15,6 +15,7 @@ data class BackupEvent(
     val typeId: String,
     val title: String,
     val details: String,
+    val emoji: String = "",
     val startDateEpochDay: Long,
     val endDateEpochDay: Long,
     val createdAtMillis: Long,
@@ -24,6 +25,7 @@ data class BackupEntry(
     val id: Long,
     val eventId: Long,
     val title: String,
+    val emoji: String = "",
     val dateEpochDay: Long,
     val startTimeMinutesOfDay: Int?,
     val details: String,
@@ -81,6 +83,7 @@ data class BackupFile(
                         .put("typeId", event.typeId)
                         .put("title", event.title)
                         .put("details", event.details)
+                        .put("emoji", event.emoji)
                         .put("startDateEpochDay", event.startDateEpochDay)
                         .put("endDateEpochDay", event.endDateEpochDay)
                         .put("createdAtMillis", event.createdAtMillis),
@@ -93,6 +96,7 @@ data class BackupFile(
                     .put("id", entry.id)
                     .put("eventId", entry.eventId)
                     .put("title", entry.title)
+                    .put("emoji", entry.emoji)
                     .put("dateEpochDay", entry.dateEpochDay)
                     .put("details", entry.details)
                     .put("intensity", entry.intensity)
@@ -168,6 +172,7 @@ data class BackupFile(
                             typeId = obj.getString("typeId"),
                             title = obj.optionalString("title"),
                             details = obj.optionalString("details"),
+                            emoji = obj.optionalString("emoji"),
                             startDateEpochDay = obj.getLong("startDateEpochDay"),
                             endDateEpochDay = obj.getLong("endDateEpochDay"),
                             createdAtMillis = obj.optLong("createdAtMillis", 0L),
@@ -178,6 +183,7 @@ data class BackupFile(
                             id = obj.getLong("id"),
                             eventId = obj.getLong("eventId"),
                             title = obj.optionalString("title"),
+                            emoji = obj.optionalString("emoji"),
                             dateEpochDay = obj.getLong("dateEpochDay"),
                             startTimeMinutesOfDay = obj.optionalInt("startTimeMinutesOfDay"),
                             details = obj.optionalString("details"),

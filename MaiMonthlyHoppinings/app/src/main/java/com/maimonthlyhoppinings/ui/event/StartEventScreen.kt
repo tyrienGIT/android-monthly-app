@@ -134,6 +134,15 @@ fun StartEventScreen(
                 )
             }
             item {
+                EmojiTagField(
+                    emoji = state.draft.emoji,
+                    onEmojiChange = viewModel::onEmojiChange,
+                    typeColor = typeColor,
+                    suggestedMood = state.types.label(state.draft.eventTypeId),
+                    modifier = Modifier.tutorialTarget(TutorialTargetIds.START_EMOJI),
+                )
+            }
+            item {
                 Column(
                     modifier = Modifier.tutorialTarget(TutorialTargetIds.START_CATEGORY_DATES),
                     verticalArrangement = Arrangement.spacedBy(12.dp),

@@ -159,6 +159,15 @@ fun EntryEditorScreen(
                 )
             }
             item {
+                EmojiTagField(
+                    emoji = state.draft.emoji,
+                    onEmojiChange = viewModel::onEmojiChange,
+                    typeColor = typeColor,
+                    suggestedMood = state.event?.let { state.types.label(it.eventTypeId) },
+                    modifier = Modifier.tutorialTarget(TutorialTargetIds.ENTRY_EMOJI),
+                )
+            }
+            item {
                 OutlinedButton(
                     onClick = { showDatePicker = true },
                     modifier = Modifier

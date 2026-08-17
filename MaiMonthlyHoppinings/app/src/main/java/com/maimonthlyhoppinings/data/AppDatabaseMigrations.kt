@@ -97,5 +97,16 @@ object AppDatabaseMigrations {
         }
     }
 
-    val all: Array<Migration> = arrayOf(MIGRATION_10_11, MIGRATION_11_12)
+    val MIGRATION_12_13 = object : Migration(12, 13) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE `tracked_events` ADD COLUMN `emoji` TEXT NOT NULL DEFAULT ''",
+            )
+            db.execSQL(
+                "ALTER TABLE `event_entries` ADD COLUMN `emoji` TEXT NOT NULL DEFAULT ''",
+            )
+        }
+    }
+
+    val all: Array<Migration> = arrayOf(MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
 }

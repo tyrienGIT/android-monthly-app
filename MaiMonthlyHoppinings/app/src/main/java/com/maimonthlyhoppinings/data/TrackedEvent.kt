@@ -17,6 +17,7 @@ data class TrackedEvent(
     val title: String,
     val eventTypeId: String = EventType.defaultId,
     val details: String = "",
+    val emoji: String = "",
     val startDateEpochDay: Long,
     val endDateEpochDay: Long,
     val createdAtMillis: Long = System.currentTimeMillis(),

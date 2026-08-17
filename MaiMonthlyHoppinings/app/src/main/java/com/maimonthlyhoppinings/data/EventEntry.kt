@@ -24,6 +24,7 @@ data class EventEntry(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val eventId: Long,
     val title: String = "",
+    val emoji: String = "",
     val dateEpochDay: Long,
     /** Minutes from midnight (0..1439). Null means no specific start time. */
     val startTimeMinutesOfDay: Int? = null,

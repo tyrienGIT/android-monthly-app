@@ -3,6 +3,7 @@ package com.maimonthlyhoppinings.ui.event
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.maimonthlyhoppinings.data.EmojiTags
 import com.maimonthlyhoppinings.data.EntryInput
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.EventTypeLookup
@@ -25,6 +26,7 @@ import java.util.Locale
 
 data class EntryDraft(
     val title: String = "",
+    val emoji: String = "",
     val date: LocalDate,
     val startTime: LocalTime? = LocalTime.now().withSecond(0).withNano(0),
     val details: String = "",
@@ -99,6 +101,7 @@ class EntryEditorViewModel(
                 val minutes = existing.entry.startTimeMinutesOfDay
                 draft.value = EntryDraft(
                     title = existing.entry.title,
+                    emoji = existing.entry.emoji,
                     date = LocalDate.ofEpochDay(existing.entry.dateEpochDay),
                     startTime = minutes?.let { LocalTime.of(it / 60, it % 60) },
                     details = existing.entry.details,
@@ -128,11 +131,16 @@ class EntryEditorViewModel(
 
     fun confirmLabel(): String {
         val custom = draft.value.title.trim()
-        return custom.ifEmpty { eventTitle() }
+        val base = custom.ifEmpty { eventTitle() }
+        return EmojiTags.prefix(draft.value.emoji, base)
     }
 
     fun onTitleChange(value: String) {
         draft.update { it.copy(title = value) }
+    }
+
+    fun onEmojiChange(value: String) {
+        draft.update { it.copy(emoji = value) }
     }
 
     fun onDetailsChange(value: String) {
@@ -169,6 +177,7 @@ class EntryEditorViewModel(
                 val input = EntryInput(
                     eventId = eventId,
                     title = current.title,
+                    emoji = current.emoji,
                     date = current.date,
                     startTime = current.startTime,
                     details = current.details,

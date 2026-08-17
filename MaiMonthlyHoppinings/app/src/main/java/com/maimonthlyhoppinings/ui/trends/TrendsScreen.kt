@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maimonthlyhoppinings.data.EntryWithEvent
 import com.maimonthlyhoppinings.data.EventTypeLookup
+import com.maimonthlyhoppinings.data.EmojiTags
 import com.maimonthlyhoppinings.data.displayTitle
 import com.maimonthlyhoppinings.data.shortDateLabel
 import com.maimonthlyhoppinings.ui.theme.colorForEventType
@@ -481,7 +482,10 @@ private fun FocusedEntryRow(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.entry.title.trim().ifEmpty { item.entry.shortDateLabel() },
+                    text = EmojiTags.prefix(
+                        item.entry.emoji,
+                        item.entry.title.trim().ifEmpty { item.entry.shortDateLabel() },
+                    ),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )

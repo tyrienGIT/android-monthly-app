@@ -3,6 +3,7 @@ package com.maimonthlyhoppinings.ui.event
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.maimonthlyhoppinings.data.EmojiTags
 import com.maimonthlyhoppinings.data.EventInput
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.EventType
@@ -24,6 +25,7 @@ data class EventMetaDraft(
     val title: String = "",
     val eventTypeId: String = EventType.defaultId,
     val details: String = "",
+    val emoji: String = "",
     val startDate: LocalDate = LocalDate.now(),
     val endDate: LocalDate = LocalDate.now(),
 )
@@ -84,6 +86,7 @@ class StartEventViewModel(
                         title = existing.title,
                         eventTypeId = existing.eventTypeId,
                         details = existing.details,
+                        emoji = existing.emoji,
                         startDate = LocalDate.ofEpochDay(existing.startDateEpochDay),
                         endDate = LocalDate.ofEpochDay(existing.endDateEpochDay),
                     )
@@ -95,7 +98,12 @@ class StartEventViewModel(
     }
 
     fun resolvedTitle(draft: EventMetaDraft = this.draft.value): String {
-        return draft.title.trim().ifEmpty { uiState.value.types.label(draft.eventTypeId) }
+        val base = draft.title.trim().ifEmpty { uiState.value.types.label(draft.eventTypeId) }
+        return EmojiTags.prefix(draft.emoji, base)
+    }
+
+    fun onEmojiChange(value: String) {
+        draft.update { it.copy(emoji = value) }
     }
 
     fun onTitleChange(value: String) {
@@ -126,9 +134,10 @@ class StartEventViewModel(
                 return@launch
             }
             val input = EventInput(
-                title = resolvedTitle(current),
+                title = current.title.trim().ifEmpty { uiState.value.types.label(current.eventTypeId) },
                 eventTypeId = current.eventTypeId,
                 details = current.details,
+                emoji = current.emoji,
                 startDate = current.startDate,
                 endDate = current.endDate,
             )
