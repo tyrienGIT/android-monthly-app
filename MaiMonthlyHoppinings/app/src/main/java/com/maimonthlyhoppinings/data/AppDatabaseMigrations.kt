@@ -75,5 +75,27 @@ object AppDatabaseMigrations {
         }
     }
 
-    val all: Array<Migration> = arrayOf(MIGRATION_10_11)
+    val MIGRATION_11_12 = object : Migration(11, 12) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            val renamed = listOf(
+                Triple("type_1", "Placeholder type 1", "Period"),
+                Triple("type_2", "Placeholder type 2", "Anxious"),
+                Triple("type_3", "Placeholder type 3", "Happy"),
+                Triple("type_4", "Placeholder type 4", "Sad"),
+                Triple("type_5", "Placeholder type 5", "Cramps"),
+            )
+            renamed.forEach { (id, oldLabel, newLabel) ->
+                db.execSQL(
+                    "UPDATE `event_types` SET `label` = ? WHERE `id` = ? AND `label` = ?",
+                    arrayOf(newLabel, id, oldLabel),
+                )
+                db.execSQL(
+                    "UPDATE `tracked_events` SET `title` = ? WHERE `eventTypeId` = ? AND `title` = ?",
+                    arrayOf(newLabel, id, oldLabel),
+                )
+            }
+        }
+    }
+
+    val all: Array<Migration> = arrayOf(MIGRATION_10_11, MIGRATION_11_12)
 }

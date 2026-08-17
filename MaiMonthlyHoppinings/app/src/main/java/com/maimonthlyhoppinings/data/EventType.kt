@@ -28,11 +28,11 @@ data class EventTypeDefinition(
 
 object EventType {
     val seeds: List<EventTypeDefinition> = listOf(
-        EventTypeDefinition("type_1", "Placeholder type 1", EventTypeColor.Red),
-        EventTypeDefinition("type_2", "Placeholder type 2", EventTypeColor.Purple),
-        EventTypeDefinition("type_3", "Placeholder type 3", EventTypeColor.Yellow),
-        EventTypeDefinition("type_4", "Placeholder type 4", EventTypeColor.Blue),
-        EventTypeDefinition("type_5", "Placeholder type 5", EventTypeColor.Green),
+        EventTypeDefinition("type_1", "Period", EventTypeColor.Red),
+        EventTypeDefinition("type_2", "Anxious", EventTypeColor.Purple),
+        EventTypeDefinition("type_3", "Happy", EventTypeColor.Yellow),
+        EventTypeDefinition("type_4", "Sad", EventTypeColor.Blue),
+        EventTypeDefinition("type_5", "Cramps", EventTypeColor.Green),
     )
 
     const val defaultId: String = "type_1"

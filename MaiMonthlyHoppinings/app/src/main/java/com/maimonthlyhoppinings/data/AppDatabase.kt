@@ -13,7 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SavedColorTheme::class,
         EventTypeEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
