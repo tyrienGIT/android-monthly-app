@@ -219,7 +219,11 @@ fun AppNav(
             }
             composable(SettingsRoutes.Data) {
                 val backupViewModel: DataBackupViewModel = viewModel(
-                    factory = DataBackupViewModel.factory(app.backupRepository),
+                    factory = DataBackupViewModel.factory(
+                        backupRepository = app.backupRepository,
+                        autoBackupRepository = app.autoBackupRepository,
+                        appPreferences = app.appPreferences,
+                    ),
                 )
                 DataSettingsScreen(
                     viewModel = backupViewModel,

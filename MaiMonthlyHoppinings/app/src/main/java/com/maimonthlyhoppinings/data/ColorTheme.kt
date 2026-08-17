@@ -51,6 +51,6 @@ enum class ColorTheme(
     ;
 
     companion object {
-        val default: ColorTheme = COASTAL
+        val default: ColorTheme = SLATE
     }
 }

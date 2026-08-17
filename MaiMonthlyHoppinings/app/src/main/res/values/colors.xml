@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#12141C</color>
-    <!-- Coastal light background; used for the pre-Compose splash. -->
-    <color name="splash_background">#F3F6F5</color>
+    <!-- Slate light background; used for the pre-Compose splash. -->
+    <color name="splash_background">#F3F5F7</color>
 </resources>

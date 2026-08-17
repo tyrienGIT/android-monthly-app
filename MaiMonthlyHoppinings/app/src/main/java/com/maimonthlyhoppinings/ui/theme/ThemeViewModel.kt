@@ -26,7 +26,7 @@ class ThemeViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ThemeMode.SYSTEM,
+            initialValue = ThemeMode.default,
         )
 
     val activeColorTheme: StateFlow<ActiveColorTheme> = themePreferences.activeColorTheme

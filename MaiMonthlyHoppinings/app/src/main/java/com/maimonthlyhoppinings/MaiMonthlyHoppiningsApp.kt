@@ -3,6 +3,7 @@ package com.maimonthlyhoppinings
 import android.app.Application
 import com.maimonthlyhoppinings.data.AppDatabase
 import com.maimonthlyhoppinings.data.AppPreferences
+import com.maimonthlyhoppinings.data.AutoBackupRepository
 import com.maimonthlyhoppinings.data.BackupRepository
 import com.maimonthlyhoppinings.data.EventRepository
 import com.maimonthlyhoppinings.data.SavedThemeRepository
@@ -25,6 +26,9 @@ open class MaiMonthlyHoppiningsApp : Application() {
     lateinit var backupRepository: BackupRepository
         private set
 
+    lateinit var autoBackupRepository: AutoBackupRepository
+        private set
+
     override fun onCreate() {
         super.onCreate()
         val database = AppDatabase.getInstance(this)
@@ -44,6 +48,11 @@ open class MaiMonthlyHoppiningsApp : Application() {
             eventEntryDao = database.eventEntryDao(),
             savedColorThemeDao = database.savedColorThemeDao(),
             themePreferences = themePreferences,
+        )
+        autoBackupRepository = AutoBackupRepository(
+            context = this,
+            backupRepository = backupRepository,
+            appPreferences = appPreferences,
         )
     }
 }

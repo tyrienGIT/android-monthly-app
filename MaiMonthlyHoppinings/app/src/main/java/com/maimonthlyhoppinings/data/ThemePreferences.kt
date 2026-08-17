@@ -24,7 +24,7 @@ class ThemePreferences(
 
     val themeMode: Flow<ThemeMode> = context.themeDataStore.data.map { prefs ->
         prefs[themeModeKey]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
-            ?: ThemeMode.SYSTEM
+            ?: ThemeMode.default
     }
 
     val activeColorTheme: Flow<ActiveColorTheme> = context.themeDataStore.data.map { prefs ->

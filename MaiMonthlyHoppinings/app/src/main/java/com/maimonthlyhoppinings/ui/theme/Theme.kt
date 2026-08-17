@@ -8,7 +8,7 @@ import com.maimonthlyhoppinings.data.ThemeMode
 
 @Composable
 fun MaiMonthlyHoppiningsTheme(
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    themeMode: ThemeMode = ThemeMode.default,
     palette: AppColorPalette = ColorTheme.default.palette(),
     content: @Composable () -> Unit,
 ) {
