@@ -2,6 +2,8 @@ package com.maimonthlyhoppinings.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items as lazyRowItems
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -38,6 +42,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.maimonthlyhoppinings.data.EventTypeColor
 import com.maimonthlyhoppinings.data.EventTypeEntity
 import com.maimonthlyhoppinings.ui.theme.toComposeColor
 
@@ -75,6 +80,7 @@ fun CategorySettingsScreen(
                 CategoryNameRow(
                     category = category,
                     onLabelChange = { viewModel.updateLabel(category.id, it) },
+                    onColorChange = { viewModel.updateColor(category.id, it) },
                 )
             }
         }
@@ -85,6 +91,7 @@ fun CategorySettingsScreen(
 private fun CategoryNameRow(
     category: EventTypeEntity,
     onLabelChange: (String) -> Unit,
+    onColorChange: (EventTypeColor) -> Unit,
 ) {
     val typeColor = category.colorEnum().toComposeColor()
     var draft by remember(category.id) { mutableStateOf(category.label) }
@@ -135,6 +142,31 @@ private fun CategoryNameRow(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { commit() }),
             )
+            LazyRow(
+                modifier = Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(EventTypeColor.entries, key = { it.name }) { color ->
+                    val swatch = color.toComposeColor()
+                    val selected = color == category.colorEnum()
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(swatch)
+                            .border(
+                                width = if (selected) 3.dp else 1.dp,
+                                color = if (selected) {
+                                    MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                                },
+                                shape = CircleShape,
+                            )
+                            .clickable { onColorChange(color) },
+                    )
+                }
+            }
         }
     }
 }

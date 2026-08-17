@@ -6,6 +6,11 @@ enum class EventTypeColor {
     Yellow,
     Blue,
     Green,
+    Orange,
+    Teal,
+    Pink,
+    Brown,
+    Gray,
     ;
 
     companion object {

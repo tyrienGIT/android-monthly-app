@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.maimonthlyhoppinings.data.EventRepository
+import com.maimonthlyhoppinings.data.EventTypeColor
 import com.maimonthlyhoppinings.data.EventTypeEntity
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +32,12 @@ class CategorySettingsViewModel(
     fun updateLabel(id: String, label: String) {
         viewModelScope.launch {
             eventRepository.updateType(id = id, label = label)
+        }
+    }
+
+    fun updateColor(id: String, color: EventTypeColor) {
+        viewModelScope.launch {
+            eventRepository.updateType(id = id, color = color)
         }
     }
 

@@ -15,6 +15,11 @@ fun EventTypeColor.toComposeColor(darkTheme: Boolean = false): Color {
         EventTypeColor.Yellow -> Color(0xFFF9A825)
         EventTypeColor.Blue -> Color(0xFF1E88E5)
         EventTypeColor.Green -> Color(0xFF43A047)
+        EventTypeColor.Orange -> Color(0xFFFB8C00)
+        EventTypeColor.Teal -> Color(0xFF00897B)
+        EventTypeColor.Pink -> Color(0xFFD81B60)
+        EventTypeColor.Brown -> Color(0xFF6D4C41)
+        EventTypeColor.Gray -> Color(0xFF546E7A)
     }
     // Soften slightly for dark mode without going fully pastel.
     return if (darkTheme) lerp(base, Color.White, 0.28f) else base
