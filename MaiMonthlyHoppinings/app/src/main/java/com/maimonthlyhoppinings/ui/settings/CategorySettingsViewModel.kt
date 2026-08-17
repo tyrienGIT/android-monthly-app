@@ -41,6 +41,20 @@ class CategorySettingsViewModel(
         }
     }
 
+    fun addCategory() {
+        viewModelScope.launch {
+            val nextNumber = uiState.value.categories
+                .mapNotNull { it.id.removePrefix("type_").toIntOrNull() }
+                .maxOrNull()
+                ?.plus(1)
+                ?: 6
+            eventRepository.addType(
+                label = "Type $nextNumber",
+                color = EventTypeColor.entries[(nextNumber - 1) % EventTypeColor.entries.size],
+            )
+        }
+    }
+
     companion object {
         fun typeSortKey(id: String): Int {
             return id.removePrefix("type_").toIntOrNull() ?: Int.MAX_VALUE

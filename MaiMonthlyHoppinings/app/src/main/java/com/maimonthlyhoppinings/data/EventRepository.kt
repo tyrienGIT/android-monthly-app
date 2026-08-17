@@ -36,6 +36,28 @@ class EventRepository(
         return eventTypeDao.observeAll().map { EventTypeLookup(it) }
     }
 
+    suspend fun addType(
+        label: String,
+        color: EventTypeColor = EventTypeColor.Red,
+    ): String {
+        val existing = eventTypeDao.getAll()
+        val nextNumber = existing
+            .mapNotNull { it.id.removePrefix("type_").toIntOrNull() }
+            .maxOrNull()
+            ?.plus(1)
+            ?: (EventType.seeds.size + 1)
+        val id = "type_$nextNumber"
+        val resolvedLabel = label.trim().ifEmpty { "Type $nextNumber" }
+        eventTypeDao.upsert(
+            EventTypeEntity(
+                id = id,
+                label = resolvedLabel,
+                color = color.name,
+            ),
+        )
+        return id
+    }
+
     suspend fun updateType(
         id: String,
         label: String? = null,
