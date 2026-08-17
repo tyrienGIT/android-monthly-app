@@ -49,7 +49,7 @@ fun TrendsChart(
     val selectedLineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.28f)
     val darkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val span = (endEpochDay - startEpochDay).coerceAtLeast(1L)
-    val visible = series.filter { it.visible && it.points.isNotEmpty() }
+    val visible = series.filter { it.points.isNotEmpty() }
     val monthTicks = remember(startEpochDay, endEpochDay) {
         monthStarts(startEpochDay, endEpochDay)
     }

@@ -31,9 +31,10 @@ data class TrendSeries(
     val label: String,
     val color: EventTypeColor,
     val points: List<TrendPoint>,
-    val visible: Boolean,
+    val selected: Boolean,
     val averageIntensity: Float?,
     val entryCount: Int,
+    val eventCount: Int,
 )
 
 data class TrendEventRow(
@@ -48,13 +49,14 @@ data class TrendEventRow(
 
 private data class TrendFilters(
     val range: TrendsRange,
-    val hidden: Set<String>?,
+    val selectedTypeId: String?,
     val selectedDay: Long?,
     val focusedEventId: Long?,
 )
 
 data class TrendsUiState(
     val range: TrendsRange = TrendsRange.THREE_MONTHS,
+    val selectedTypeId: String? = null,
     val startDate: LocalDate = LocalDate.now().minusDays(TrendsRange.THREE_MONTHS.days - 1),
     val endDate: LocalDate = LocalDate.now(),
     val series: List<TrendSeries> = emptyList(),
@@ -72,7 +74,7 @@ class TrendsViewModel(
     eventRepository: EventRepository,
 ) : ViewModel() {
     private val range = MutableStateFlow(TrendsRange.THREE_MONTHS)
-    private val hiddenOverride = MutableStateFlow<Set<String>?>(null)
+    private val selectedTypeId = MutableStateFlow<String?>(null)
     private val selectedEpochDay = MutableStateFlow<Long?>(null)
     private val focusedEventId = MutableStateFlow<Long?>(null)
 
@@ -81,11 +83,11 @@ class TrendsViewModel(
 
     private val filters = combine(
         range,
-        hiddenOverride,
+        selectedTypeId,
         selectedEpochDay,
         focusedEventId,
-    ) { selectedRange, hidden, selectedDay, focusedId ->
-        TrendFilters(selectedRange, hidden, selectedDay, focusedId)
+    ) { selectedRange, typeId, selectedDay, focusedId ->
+        TrendFilters(selectedRange, typeId, selectedDay, focusedId)
     }
 
     val uiState: StateFlow<TrendsUiState> = combine(
@@ -98,31 +100,30 @@ class TrendsViewModel(
         val startEpoch = rangeStart.toEpochDay()
         val endEpoch = rangeEnd.toEpochDay()
         val inRange = entries.filter { it.entry.dateEpochDay in startEpoch..endEpoch }
-        val focusedTypeId = inRange
+        val eventRows = buildEventRows(inRange, types)
+        val defaultTypeId = inRange
             .groupingBy { it.event.eventTypeId }
             .eachCount()
             .maxByOrNull { it.value }
             ?.key
-        val effectiveHidden = filter.hidden ?: types.all
-            .map { it.id }
-            .filter { it != focusedTypeId }
-            .toSet()
-        val visibleTypeIds = types.all
-            .map { it.id }
-            .filter { it !in effectiveHidden }
-            .toSet()
-        val visibleEntries = inRange.filter { it.event.eventTypeId in visibleTypeIds }
-        val eventRows = buildEventRows(visibleEntries, types)
-        val focused = eventRows.firstOrNull { it.eventId == filter.focusedEventId }
+        val availableTypeIds = eventRows.map { it.typeId }.toSet()
+        val activeTypeId = filter.selectedTypeId
+            ?.takeIf { it in availableTypeIds }
+            ?: defaultTypeId
+        val categoryStats = buildSeries(inRange, eventRows, types, activeTypeId)
+        val typeEntries = inRange.filter { it.event.eventTypeId == activeTypeId }
+        val typeEvents = eventRows
+            .filter { it.typeId == activeTypeId }
+            .sortedByDescending { it.startDate }
+        val focused = typeEvents.firstOrNull { it.eventId == filter.focusedEventId }
         val focusedEntries = if (focused != null) {
-            visibleEntries
+            typeEntries
                 .filter { it.event.id == focused.eventId }
                 .sortedBy { it.entry.dateEpochDay }
         } else {
             emptyList()
         }
-        val chartEntries = if (focused != null) focusedEntries else visibleEntries
-        val categoryStats = buildSeries(inRange, types, effectiveHidden)
+        val chartEntries = if (focused != null) focusedEntries else typeEntries
         val chartStart = if (focused != null) {
             focused.startDate.minusDays(3).coerceAtLeast(rangeStart)
         } else {
@@ -133,18 +134,19 @@ class TrendsViewModel(
         } else {
             rangeEnd
         }
-        val series = buildSeries(chartEntries, types, effectiveHidden)
+        val series = buildSeries(chartEntries, typeEvents, types, activeTypeId)
+            .filter { it.selected }
         val dayEntries = filter.selectedDay?.let { day ->
-            visibleEntries.filter { it.entry.dateEpochDay == day }
-                .sortedBy { it.event.eventTypeId }
+            typeEntries.filter { it.entry.dateEpochDay == day }
         }.orEmpty()
         TrendsUiState(
             range = filter.range,
+            selectedTypeId = activeTypeId,
             startDate = chartStart,
             endDate = chartEnd,
             series = series,
             categoryStats = categoryStats,
-            events = eventRows.sortedByDescending { it.startDate },
+            events = typeEvents,
             focusedEvent = focused,
             focusedEntries = focusedEntries,
             selectedEpochDay = filter.selectedDay,
@@ -164,17 +166,11 @@ class TrendsViewModel(
         focusedEventId.value = null
     }
 
-    fun toggleType(typeId: String) {
-        val currentHidden = hiddenOverride.value
-            ?: uiState.value.categoryStats.filterNot { it.visible }.map { it.typeId }.toSet()
-        val nextHidden = currentHidden.toMutableSet().also { ids ->
-            if (!ids.add(typeId)) ids.remove(typeId)
-        }
-        hiddenOverride.value = nextHidden
-        val focused = uiState.value.focusedEvent
-        if (focused != null && focused.typeId in nextHidden) {
-            focusedEventId.value = null
-        }
+    fun selectType(typeId: String) {
+        if (selectedTypeId.value == typeId) return
+        selectedTypeId.value = typeId
+        focusedEventId.value = null
+        selectedEpochDay.value = null
     }
 
     fun selectDay(epochDay: Long?) {
@@ -218,14 +214,16 @@ class TrendsViewModel(
 
         internal fun buildSeries(
             entries: List<EntryWithEvent>,
+            events: List<TrendEventRow>,
             types: EventTypeLookup,
-            hiddenTypeIds: Set<String>,
+            selectedTypeId: String?,
         ): List<TrendSeries> {
             val peaks = entries
                 .groupBy { it.event.eventTypeId to it.entry.dateEpochDay }
                 .map { (key, items) ->
                     Triple(key.first, key.second, items.maxOf { it.entry.intensity })
                 }
+            val eventCountByType = events.groupingBy { it.typeId }.eachCount()
             val typeOrder = types.all.map { it.id }
             val typeIds = (typeOrder + peaks.map { it.first })
                 .distinct()
@@ -240,10 +238,11 @@ class TrendsViewModel(
                     label = types.label(typeId),
                     color = types.color(typeId),
                     points = points,
-                    visible = typeId !in hiddenTypeIds,
+                    selected = typeId == selectedTypeId,
                     averageIntensity = points.takeIf { it.isNotEmpty() }
                         ?.map { it.intensity }?.average()?.toFloat(),
                     entryCount = points.size,
+                    eventCount = eventCountByType[typeId] ?: 0,
                 )
             }
         }

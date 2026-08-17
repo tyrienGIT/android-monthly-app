@@ -109,6 +109,31 @@ fun TrendsScreen(
                 }
             }
 
+            if (state.categoryStats.isNotEmpty() && focused == null) {
+                item {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        state.categoryStats.forEach { series ->
+                            FilterChip(
+                                selected = series.selected,
+                                onClick = { viewModel.selectType(series.typeId) },
+                                label = { Text(series.label) },
+                                leadingIcon = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .clip(CircleShape)
+                                            .background(series.color.toComposeColor()),
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
             item {
                 Card(
                     colors = CardDefaults.cardColors(
@@ -129,7 +154,7 @@ fun TrendsScreen(
                             text = if (focused != null) {
                                 "Daily entries for this event. Drag to inspect a day."
                             } else {
-                                "All events in the selected categories. Tap an event below to zoom in."
+                                "One category at a time. Tap another chip to switch, or an event below to zoom in."
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -173,79 +198,45 @@ fun TrendsScreen(
                 }
             }
 
-            if (state.categoryStats.isNotEmpty() && focused == null) {
+            if (focused == null && state.categoryStats.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Categories",
+                        text = "Summary",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 8.dp),
-                    ) {
-                        state.categoryStats.forEach { series ->
-                            FilterChip(
-                                selected = series.visible,
-                                onClick = { viewModel.toggleType(series.typeId) },
-                                label = { Text(series.label) },
-                                leadingIcon = {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .clip(CircleShape)
-                                            .background(series.color.toComposeColor()),
-                                    )
-                                },
-                            )
-                        }
-                    }
                 }
-            }
-
-            if (focused == null) {
-                val stats = state.categoryStats.filter { it.visible && it.points.isNotEmpty() }
-                if (stats.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "Summary",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                    item {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface,
-                            ),
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                stats.forEach { series ->
-                                    val eventCount = state.events.count { it.typeId == series.typeId }
-                                    Text(
-                                        text = buildString {
-                                            append(series.label)
-                                            append(" · ")
-                                            append(eventCount)
-                                            append(if (eventCount == 1) " event" else " events")
-                                            append(" · ")
-                                            append(series.entryCount)
-                                            append(if (series.entryCount == 1) " day" else " days")
-                                            series.averageIntensity?.let { average ->
-                                                append(" · avg ")
-                                                append(String.format(Locale.getDefault(), "%.1f", average))
-                                            }
-                                        },
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = colorForEventType(series.typeId, state.types),
-                                    )
-                                }
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                        ),
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            state.categoryStats.forEach { series ->
+                                val selected = series.selected
+                                Text(
+                                    text = buildString {
+                                        append(series.label)
+                                        append(" · ")
+                                        append(series.eventCount)
+                                        append(if (series.eventCount == 1) " event" else " events")
+                                        append(" · ")
+                                        append(series.entryCount)
+                                        append(if (series.entryCount == 1) " day" else " days")
+                                        series.averageIntensity?.let { average ->
+                                            append(" · avg ")
+                                            append(String.format(Locale.getDefault(), "%.1f", average))
+                                        }
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = colorForEventType(series.typeId, state.types),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.selectType(series.typeId) }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                )
                             }
                         }
                     }
